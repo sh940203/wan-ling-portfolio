@@ -100,15 +100,6 @@ html.lenis body {
   transform: translateY(0);
 }
 
-/* Custom cursor — hide native cursor on pointer-precise (desktop) devices */
-@media (pointer: fine) {
-  *,
-  *::before,
-  *::after {
-    cursor: none !important;
-  }
-}
-
 /* Reduced motion — disable everything */
 @media (prefers-reduced-motion: reduce) {
   *,

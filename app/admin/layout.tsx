@@ -2,7 +2,6 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { isAuthed } from "@/lib/auth";
 import { logoutAction } from "./actions";
-import CustomCursor from "@/components/CustomCursor";
 
 export const metadata: Metadata = {
   title: "Admin — WAN-LING",
@@ -18,7 +17,6 @@ export default async function AdminLayout({
 
   return (
     <div className="min-h-screen bg-warm-bg">
-      <CustomCursor />
       {authed && (
         <header className="sticky top-0 z-40 border-b-[0.5px] border-warm-border bg-warm-bg/90 backdrop-blur-md">
           <div className="mx-auto flex h-14 max-w-4xl items-center justify-between px-5">
