@@ -9,13 +9,19 @@ export default function CustomCursor() {
   const [clicking, setClicking] = useState(false);
   const [ready, setReady] = useState(false);
 
-  const mx = useMotionValue(-200);
-  const my = useMotionValue(-200);
-  const rx = useSpring(mx, { damping: 22, stiffness: 260 });
-  const ry = useSpring(my, { damping: 22, stiffness: 260 });
+  // Dot — snaps instantly
+  const mx = useMotionValue(-300);
+  const my = useMotionValue(-300);
+
+  // Glow — floats behind with a very dreamy lag
+  const gx = useSpring(mx, { stiffness: 22, damping: 9 });
+  const gy = useSpring(my, { stiffness: 22, damping: 9 });
+
+  // Inner glow — slightly faster than outer
+  const igx = useSpring(mx, { stiffness: 38, damping: 11 });
+  const igy = useSpring(my, { stiffness: 38, damping: 11 });
 
   useEffect(() => {
-    // Hide on touch devices
     if (window.matchMedia("(pointer: coarse)").matches) return;
     setReady(true);
 
@@ -50,28 +56,54 @@ export default function CustomCursor() {
 
   return (
     <>
-      {/* Precise dot */}
+      {/* Outer bokeh — largest, slowest, most transparent */}
       <motion.span
         aria-hidden
-        className="pointer-events-none fixed left-0 top-0 z-[9999] block h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#5C4A3A]"
-        style={{ x: mx, y: my }}
-        animate={{ opacity: visible ? 1 : 0, scale: clicking ? 0.5 : 1 }}
-        transition={{ duration: 0.1 }}
-      />
-      {/* Lagging ring */}
-      <motion.span
-        aria-hidden
-        className="pointer-events-none fixed left-0 top-0 z-[9998] block -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#5C4A3A]/40"
-        style={{ x: rx, y: ry }}
+        className="pointer-events-none fixed left-0 top-0 z-[9996] block -translate-x-1/2 -translate-y-1/2 rounded-full"
+        style={{
+          x: gx,
+          y: gy,
+          background:
+            "radial-gradient(circle, rgba(210,194,174,0.22) 0%, rgba(197,180,154,0.10) 45%, transparent 72%)",
+        }}
         animate={{
           opacity: visible ? 1 : 0,
-          width: hovering ? 54 : clicking ? 16 : 34,
-          height: hovering ? 54 : clicking ? 16 : 34,
-          borderColor: hovering
-            ? "rgba(92,74,58,0.75)"
-            : "rgba(92,74,58,0.35)",
+          width: hovering ? 160 : clicking ? 70 : 120,
+          height: hovering ? 160 : clicking ? 70 : 120,
         }}
-        transition={{ duration: 0.18 }}
+        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+      />
+
+      {/* Inner bokeh — tighter, warmer, slightly faster */}
+      <motion.span
+        aria-hidden
+        className="pointer-events-none fixed left-0 top-0 z-[9997] block -translate-x-1/2 -translate-y-1/2 rounded-full"
+        style={{
+          x: igx,
+          y: igy,
+          background:
+            "radial-gradient(circle, rgba(191,169,143,0.38) 0%, rgba(191,155,120,0.16) 50%, transparent 72%)",
+        }}
+        animate={{
+          opacity: visible ? 1 : 0,
+          width: hovering ? 72 : clicking ? 28 : 52,
+          height: hovering ? 72 : clicking ? 28 : 52,
+        }}
+        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+      />
+
+      {/* Precise dot — instant */}
+      <motion.span
+        aria-hidden
+        className="pointer-events-none fixed left-0 top-0 z-[9999] block -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#5C4A3A]"
+        style={{ x: mx, y: my }}
+        animate={{
+          opacity: visible ? 1 : 0,
+          width: clicking ? 2 : hovering ? 3 : 4,
+          height: clicking ? 2 : hovering ? 3 : 4,
+          scale: clicking ? 0.6 : 1,
+        }}
+        transition={{ duration: 0.12 }}
       />
     </>
   );
