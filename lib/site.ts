@@ -10,8 +10,8 @@ export const site = {
     brand: "WAN-LING",
   },
   role: {
-    zh: "影片剪接 · 影像創作",
-    en: "Video Editor & Storyteller",
+    zh: "社群短影音剪輯 · 內容創作",
+    en: "Short Video Editor · Content Creator",
   },
   // 聯絡與社群
   email: "wannn2004@gmail.com",
@@ -31,28 +31,37 @@ export const site = {
   hero: {
     // 放一支自己的影片到 public/ 後填 "/showreel.mp4"，會用 <video> 背景播放
     videoUrl: "",
-    // 靜態底圖（影片載入前 / reduced-motion 時顯示）；留空則用 featured 作品封面
-    poster: "",
+    // 靜態底圖（影片載入前 / reduced-motion 時顯示）；留空則用暖色漸層
+    poster: "/photo-portrait.jpg",
     subtitle: "Video Editor · Storyteller — Taipei",
   },
 
   // About 頁
   about: {
-    photo: "",
-    bioZh: "江婉綾，影像創作與剪接工作者，剛從時尚經營科系畢業。擅長以暖色調與細膩的節奏說故事，喜歡把日常的素材剪成有情緒、有節奏的影像。相信每一個畫面都能傳遞感受，也享受在剪接檯上把素材變成故事的過程。",
-    bioEn: "Wan-Ling Chiang is a video editor and visual storyteller, recently graduated. She tells stories through warm tones and a delicate sense of rhythm, turning everyday footage into images with emotion and pace. She believes every frame can carry feeling, and loves the craft of turning footage into story at the edit.",
+    photo: "/photo-portrait.jpg",
+    bioZh: "嶺東科大時尚經營系應屆畢業生，曾擔任短影音小編和畢製公關，負責 IG、Threads 社群內容製作與活動宣傳。實際參與貼文企劃、文案撰寫與短影音剪輯拍攝，並具備基礎視覺排版能力，能依品牌需求執行社群內容製作並配合調整內容方向。熟悉社群運作節奏並擅長關注熱門趨勢，能快速上手社群行銷相關工作。",
+    bioEn: "Recent graduate of Ling Tung University's Fashion Business & Merchandising program. Served as short-video editor and PR coordinator for her graduation project, managing IG and Threads content creation and event promotion. Experienced in post planning, copywriting, and short-form video production with solid visual layout skills. Comfortable adapting to brand needs and staying on top of trending content.",
     skills: [
       "Premiere Pro",
       "DaVinci Resolve",
       "After Effects",
       "Color Grading",
-      "Sound Design",
+      "IG Reels",
       "Storytelling",
       "Motion Graphics",
-      "Social Cutdowns",
+      "社群內容策劃",
+      "文案撰寫",
+      "活動公關",
     ],
     // 工作 / 接案經歷
     experience: [
+      {
+        role: "短影音剪輯 · 畢製公關",
+        org: "嶺東科大時尚經營系 畢業製作 — 元福宮",
+        period: "2024 – 2025",
+        desc: "擔任畢業展覽公關及短影音剪輯，負責創意腳本拍攝與後製。單支作品在 Instagram 累積 660.3 萬次瀏覽；榮獲 115 學年度第七屆畢業專題競賽論文組第三名。",
+        link: "https://www.instagram.com/reel/DSZJMDjEfSa/",
+      },
       {
         role: "社群影片企劃 · 剪輯",
         org: "日昀美睫 Riyun Eyelash",

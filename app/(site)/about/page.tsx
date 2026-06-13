@@ -16,7 +16,7 @@ export default async function AboutPage() {
   return (
     <main>
       {/* 全寬照片 Hero + 底部漸層疊名字 */}
-      <section className="relative h-[200px] w-full overflow-hidden bg-warm-mid md:h-[300px]">
+      <section className="relative h-[280px] w-full overflow-hidden bg-warm-mid md:h-[420px]">
         {site.about.photo && (
           <ParallaxImage
             src={site.about.photo}
@@ -45,10 +45,24 @@ export default async function AboutPage() {
       </section>
 
       <div className="mx-auto max-w-4xl px-5 py-2xl md:px-10">
-        {/* Bio */}
+        {/* Bio + Headshot */}
         <Reveal>
-          <div className="max-w-2xl">
-            <BioTabs zh={site.about.bioZh} en={site.about.bioEn} />
+          <div className="flex flex-col gap-7 sm:flex-row sm:items-start sm:gap-10">
+            {/* 證件照 */}
+            <div className="shrink-0">
+              <div className="h-[200px] w-[148px] overflow-hidden rounded-xl bg-warm-mid">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/photo-headshot.jpg"
+                  alt={site.name.zh}
+                  className="h-full w-full object-cover object-top"
+                />
+              </div>
+            </div>
+            {/* Bio 中英切換 */}
+            <div className="flex-1">
+              <BioTabs zh={site.about.bioZh} en={site.about.bioEn} />
+            </div>
           </div>
         </Reveal>
 
@@ -96,6 +110,62 @@ export default async function AboutPage() {
             </div>
           </Reveal>
         )}
+
+        {/* Awards & Recognition */}
+        <Reveal>
+          <div className="mt-12">
+            <p className="label mb-4">Awards & Recognition</p>
+
+            {/* 660万 highlight card */}
+            <a
+              href="https://www.instagram.com/reel/DSZJMDjEfSa/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group mb-5 flex items-center gap-5 rounded-xl border-[0.5px] border-warm-border bg-warm-surface px-5 py-4 transition-colors hover:border-text-primary/25"
+            >
+              <div className="shrink-0">
+                <p className="display text-[40px] leading-none text-text-primary">
+                  660.3<span className="text-[22px]">萬</span>
+                </p>
+                <p className="mt-0.5 text-[9px] uppercase tracking-[0.12em] text-text-muted">
+                  views · instagram
+                </p>
+              </div>
+              <div className="min-w-0">
+                <p className="text-[13px] text-text-body">
+                  畢業展覽短影音 — 元福宮創意腳本
+                </p>
+                <p className="mt-1 text-[11px] tracking-[0.06em] text-text-secondary transition-colors group-hover:text-text-primary">
+                  觀看影片 ↗
+                </p>
+              </div>
+            </a>
+
+            {/* 活動 + 獎狀照片 */}
+            <div className="grid grid-cols-2 gap-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/photo-event-stage.jpg"
+                alt="領獎典禮 — 第三名"
+                className="aspect-[4/3] w-full rounded-lg object-cover"
+              />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/photo-award.jpg"
+                alt="第三名獎狀 — 嶺東科大時尚經營系"
+                className="aspect-[4/3] w-full rounded-lg object-cover object-top"
+              />
+            </div>
+            <div className="mt-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/photo-event-candid.jpg"
+                alt="活動現場"
+                className="aspect-[21/9] w-full rounded-lg object-cover"
+              />
+            </div>
+          </div>
+        </Reveal>
 
         {/* Skills */}
         <Reveal>
