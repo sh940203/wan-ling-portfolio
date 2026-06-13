@@ -7,8 +7,10 @@ import { sampleWorks } from "./sample-works";
 function resolveUrl(): string {
   const url = process.env.DATABASE_URL;
   if (url) return url;
-  // 預設：專案根目錄下 .data/portfolio.db
-  const dir = path.join(process.cwd(), ".data");
+  // Vercel 的 process.cwd() 是唯讀的，用 /tmp；本地則放 .data/
+  const dir = process.env.VERCEL
+    ? "/tmp"
+    : path.join(process.cwd(), ".data");
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
   return `file:${path.join(dir, "portfolio.db")}`;
 }
