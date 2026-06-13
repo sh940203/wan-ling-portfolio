@@ -141,29 +141,49 @@ export default async function AboutPage() {
               </div>
             </a>
 
-            {/* 活動 + 獎狀照片 */}
-            <div className="grid grid-cols-2 gap-3">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/photo-event-stage.jpg"
-                alt="領獎典禮 — 第三名"
-                className="aspect-[4/3] w-full rounded-lg object-cover"
-              />
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/photo-award.jpg"
-                alt="第三名獎狀 — 嶺東科大時尚經營系"
-                className="aspect-[4/3] w-full rounded-lg object-cover object-top"
-              />
+            {/* 頒獎典禮 + 獎狀 */}
+            <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
+              {/* 頒獎典禮 */}
+              <figure className="sm:flex-[3]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/photo-event-stage.jpg"
+                  alt="元福宮 × 嶺東科大 FBM 第七屆畢業專題競賽頒獎典禮"
+                  className="aspect-[4/3] w-full rounded-xl object-cover"
+                />
+                <figcaption className="mt-2.5 text-center text-[11px] leading-[1.65] tracking-[0.04em] text-text-muted">
+                  元福宮 × 嶺東科大 FBM<br />
+                  第七屆畢業專題競賽 · 頒獎典禮
+                </figcaption>
+              </figure>
+
+              {/* 獎狀 — 自然直式比例，不裁切 */}
+              <figure className="sm:flex-[2]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/photo-award.jpg"
+                  alt="115學年度嶺東科大時尚經營系論文組第三名獎狀"
+                  className="w-full rounded-xl"
+                />
+                <figcaption className="mt-2.5 text-center text-[11px] leading-[1.65] tracking-[0.04em] text-text-muted">
+                  115學年度 · 論文組第三名<br />
+                  消費者對二手奢侈品之態度與購買意願
+                </figcaption>
+              </figure>
             </div>
-            <div className="mt-3">
+
+            {/* 展覽現場 */}
+            <figure className="mt-5">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/photo-event-candid.jpg"
-                alt="活動現場"
-                className="aspect-[21/9] w-full rounded-lg object-cover"
+                alt="畢業展覽現場 — 研究成果展示與團隊合照"
+                className="aspect-[4/3] w-full rounded-xl object-cover"
               />
-            </div>
+              <figcaption className="mt-2.5 text-center text-[11px] leading-[1.65] tracking-[0.04em] text-text-muted">
+                畢業展覽現場 — 研究成果展示 · 二手奢侈品實物陳列 · 團隊合照
+              </figcaption>
+            </figure>
           </div>
         </Reveal>
 
