@@ -33,7 +33,7 @@ export const site = {
     videoUrl: "",
     // 靜態底圖（影片載入前 / reduced-motion 時顯示）；留空則用暖色漸層
     poster: "/photo-portrait.jpg",
-    subtitle: "Video Editor · Storyteller — Taipei",
+    subtitle: "Video Editor · Storyteller — Taichung",
   },
 
   // About 頁

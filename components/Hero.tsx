@@ -133,7 +133,7 @@ export default function Hero({ slides, name, fullName, subtitle }: HeroProps) {
           >
             {slide.type === "video" ? (
               <video
-                className="h-full w-full object-cover"
+                className="h-full w-full object-cover object-top"
                 src={slide.src}
                 poster={slide.poster}
                 autoPlay
@@ -146,7 +146,7 @@ export default function Hero({ slides, name, fullName, subtitle }: HeroProps) {
               <img
                 src={slide.src}
                 alt=""
-                className={`h-full w-full object-cover ${
+                className={`h-full w-full object-cover object-top ${
                   i === active && !reduce
                     ? "animate-[kenburns_8s_ease-out_both]"
                     : ""
@@ -157,20 +157,38 @@ export default function Hero({ slides, name, fullName, subtitle }: HeroProps) {
         ))}
       </motion.div>
 
-      {/* Warm overlay for media backgrounds */}
+      {/* Cinematic dark gradient overlay */}
       {hasMedia && (
         <div
           className="absolute inset-0"
           style={{
             background:
-              "linear-gradient(to bottom, rgba(92,74,58,0.10) 0%, transparent 40%, rgba(92,74,58,0.40) 100%)",
+              "linear-gradient(to bottom, rgba(6,4,2,0.06) 0%, transparent 26%, rgba(6,4,2,0.48) 60%, rgba(6,4,2,0.78) 82%, rgba(6,4,2,0.88) 100%)",
           }}
         />
       )}
 
+      {/* Letterbox bars */}
+      {hasMedia && (
+        <>
+          <div
+            aria-hidden
+            className="pointer-events-none absolute left-0 right-0 top-0 z-20"
+            style={{ height: "46px", background: "rgba(5,3,1,0.92)" }}
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute bottom-0 left-0 right-0 z-20"
+            style={{ height: "46px", background: "rgba(5,3,1,0.92)" }}
+          />
+        </>
+      )}
+
       {/* ── Central name (scroll parallax + fade-in) ── */}
       <motion.div
-        className="relative z-10 flex h-full flex-col items-center justify-center px-6 text-center"
+        className={`relative z-30 flex h-full flex-col items-center px-6 text-center ${
+          hasMedia ? "justify-end pb-16 md:pb-[72px]" : "justify-center"
+        }`}
         style={reduce ? undefined : { y: nameY, opacity: nameOpacity }}
       >
         {/* Brand name with 3D float on mouse move (subtle depth) */}
@@ -178,11 +196,11 @@ export default function Hero({ slides, name, fullName, subtitle }: HeroProps) {
           initial={reduce ? false : { opacity: 0, y: 26 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1.1, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
-          style={reduce ? undefined : { rotateX: tiltX, rotateY: tiltY }}
-          className={`display text-[52px] leading-none tracking-[0.06em] sm:text-[72px] md:text-[96px] ${
+          style={reduce || hasMedia ? undefined : { rotateX: tiltX, rotateY: tiltY }}
+          className={`display leading-none tracking-[0.06em] ${
             hasMedia
-              ? "text-on-dark drop-shadow-[0_2px_24px_rgba(92,74,58,0.45)]"
-              : "text-text-primary"
+              ? "text-[38px] text-white sm:text-[50px] md:text-[66px]"
+              : "text-[52px] text-text-primary sm:text-[72px] md:text-[96px]"
           }`}
         >
           {name}
@@ -194,7 +212,7 @@ export default function Hero({ slides, name, fullName, subtitle }: HeroProps) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1], delay: 0.35 }}
             className={`mt-3 text-[13px] tracking-[0.18em] ${
-              hasMedia ? "text-on-dark/70" : "text-text-secondary"
+              hasMedia ? "text-white/70" : "text-text-secondary"
             }`}
           >
             {fullName}
@@ -206,7 +224,7 @@ export default function Hero({ slides, name, fullName, subtitle }: HeroProps) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, ease: [0.22, 1, 0.36, 1], delay: 0.55 }}
           className={`mt-2 text-[10px] uppercase tracking-[0.28em] ${
-            hasMedia ? "text-on-dark/60" : "text-text-muted"
+            hasMedia ? "text-white/55" : "text-text-muted"
           }`}
         >
           {subtitle}
@@ -224,14 +242,14 @@ export default function Hero({ slides, name, fullName, subtitle }: HeroProps) {
         )}
       </motion.div>
 
-      {/* Scroll cue */}
+      {/* Scroll cue — sits above the bottom letterbox bar when in cinematic mode */}
       <motion.a
         href="#selected-works"
         style={reduce ? undefined : { opacity: cueOpacity }}
-        className={`absolute bottom-6 right-5 z-10 text-[10px] uppercase tracking-[0.18em] transition-colors md:right-10 ${
+        className={`absolute z-30 text-[10px] uppercase tracking-[0.18em] transition-colors ${
           hasMedia
-            ? "text-on-dark/70 hover:text-on-dark"
-            : "text-text-muted hover:text-text-primary"
+            ? "bottom-[54px] right-5 text-white/60 hover:text-white md:right-10"
+            : "bottom-6 right-5 text-text-muted hover:text-text-primary md:right-10"
         }`}
       >
         scroll to explore ↓
