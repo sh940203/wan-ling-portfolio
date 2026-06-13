@@ -1,0 +1,126 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Color tokens */
+  --color-bg: #FBF7F2;
+  --color-surface: #F0E8DC;
+  --color-warm-mid: #E8DDD0;
+  --color-warm-deep: #DDD0C0;
+  --color-border: #D9CCBA;
+  --color-text-muted: #B0A090;
+  --color-text-secondary: #9C8878;
+  --color-text-body: #7A6858;
+  --color-text-primary: #5C4A3A;
+  --color-on-dark: #FBF7F2;
+
+  /* Spacing */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 40px;
+  --space-2xl: 64px;
+}
+
+/* Lenis 平滑捲動所需樣式 */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-text-body);
+    font-family: var(--font-dm-sans), -apple-system, sans-serif;
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background-color: var(--color-warm-deep);
+    color: var(--color-text-primary);
+  }
+}
+
+@layer components {
+  /* uppercase label style */
+  .label {
+    font-family: var(--font-dm-sans), sans-serif;
+    font-weight: 400;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-size: 11px;
+    color: var(--color-text-muted);
+  }
+
+  /* display font helper */
+  .display {
+    font-family: var(--font-cormorant), Georgia, serif;
+    font-weight: 400;
+    letter-spacing: 0.06em;
+  }
+}
+
+/* Hero 背景圖緩慢推近 (Ken Burns) */
+@keyframes kenburns {
+  0% {
+    transform: scale(1.02);
+  }
+  100% {
+    transform: scale(1.12);
+  }
+}
+
+/* Scroll reveal — start hidden, reveal via IntersectionObserver */
+.reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+  will-change: opacity, transform;
+}
+.reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Custom cursor — hide native cursor on pointer-precise (desktop) devices */
+@media (pointer: fine) {
+  *,
+  *::before,
+  *::after {
+    cursor: none !important;
+  }
+}
+
+/* Reduced motion — disable everything */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .reveal {
+    opacity: 1;
+    transform: none;
+  }
+}
