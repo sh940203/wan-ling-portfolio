@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import Button from "@/components/ui/Button";
 import Chip from "@/components/ui/Chip";
 import Reveal from "@/components/Reveal";
 import ParallaxImage from "@/components/ParallaxImage";
+import BioTabs from "@/components/BioTabs";
 import { getSettings } from "@/lib/settings";
 
 export const metadata: Metadata = {
@@ -45,13 +47,8 @@ export default async function AboutPage() {
       <div className="mx-auto max-w-4xl px-5 py-2xl md:px-10">
         {/* Bio */}
         <Reveal>
-          <div className="max-w-2xl space-y-5">
-            <p className="text-[14px] leading-[1.8] text-text-body">
-              {site.about.bioZh}
-            </p>
-            <p className="text-[14px] leading-[1.8] text-text-secondary">
-              {site.about.bioEn}
-            </p>
+          <div className="max-w-2xl">
+            <BioTabs zh={site.about.bioZh} en={site.about.bioEn} />
           </div>
         </Reveal>
 
@@ -124,6 +121,27 @@ export default async function AboutPage() {
             <Button href={site.resumeUrl} variant="primary" size="sm">
               Download PDF ↓
             </Button>
+          </div>
+        </Reveal>
+
+        {/* Contact CTA */}
+        <Reveal>
+          <div className="mt-16 border-t-[0.5px] border-warm-border pt-14 text-center">
+            <p className="label mb-3">Get in touch</p>
+            <h2 className="display text-[32px] leading-tight text-text-primary md:text-[40px]">
+              想合作？歡迎聯絡。
+            </h2>
+            <p className="mx-auto mt-3 max-w-sm text-[13px] leading-[1.8] text-text-secondary">
+              {site.contact.subtitleZh}
+            </p>
+            <div className="mt-7">
+              <Link
+                href="/contact"
+                className="inline-block rounded-full bg-text-primary px-8 py-3 text-[12px] uppercase tracking-[0.14em] text-on-dark transition-opacity hover:opacity-80"
+              >
+                Contact me →
+              </Link>
+            </div>
           </div>
         </Reveal>
       </div>

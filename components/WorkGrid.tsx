@@ -22,21 +22,25 @@ export default function WorkGrid({ works }: { works: Work[] }) {
     [works, filter]
   );
 
+  // 只有一種真實分類時不顯示篩選列
+  const showFilter = filters.length > 2;
+
   return (
     <div>
-      {/* filter tags */}
-      <div className="mb-8 flex flex-wrap gap-2">
-        {filters.map((f) => (
-          <Chip
-            key={f}
-            as="button"
-            active={filter === f}
-            onClick={() => setFilter(f)}
-          >
-            {f}
-          </Chip>
-        ))}
-      </div>
+      {showFilter && (
+        <div className="mb-8 flex flex-wrap gap-2">
+          {filters.map((f) => (
+            <Chip
+              key={f}
+              as="button"
+              active={filter === f}
+              onClick={() => setFilter(f)}
+            >
+              {f}
+            </Chip>
+          ))}
+        </div>
+      )}
 
       {/* 直式 Reels 網格（錯落浮現） */}
       <Stagger

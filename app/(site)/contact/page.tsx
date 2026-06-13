@@ -47,24 +47,28 @@ export default async function ContactPage() {
               )}
             </div>
 
-            <div className="mt-8 flex flex-col gap-2">
-              <p className="label mb-1">Elsewhere</p>
-              {socials.map((s) => (
-                <a
-                  key={s.label}
-                  href={s.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group inline-flex items-center gap-2 text-[14px] text-text-secondary transition-colors hover:text-text-primary"
-                >
-                  <span className="inline-block h-1 w-1 rounded-full bg-text-muted transition-colors group-hover:bg-text-primary" />
-                  {s.label}
-                  <span className="opacity-0 transition-opacity group-hover:opacity-100">
-                    ↗
-                  </span>
-                </a>
-              ))}
-            </div>
+            {socials.length > 0 && (
+              <div className="mt-8">
+                <p className="label mb-3">Elsewhere</p>
+                <div className="flex flex-col gap-1.5">
+                  {socials.map((s) => (
+                    <a
+                      key={s.label}
+                      href={s.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group inline-flex w-fit items-center gap-3 rounded-full border-[0.5px] border-warm-border px-4 py-2 text-[12px] uppercase tracking-[0.1em] text-text-secondary transition-all hover:border-text-primary/30 hover:text-text-primary"
+                    >
+                      <span className="h-1 w-1 rounded-full bg-text-muted transition-colors group-hover:bg-text-primary" />
+                      {s.label}
+                      <span className="translate-x-0 opacity-0 transition-all group-hover:translate-x-0.5 group-hover:opacity-100">
+                        ↗
+                      </span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </Reveal>
 

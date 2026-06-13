@@ -17,6 +17,7 @@ export type HeroSlide =
 type HeroProps = {
   slides: HeroSlide[];
   name: string;
+  fullName?: string;
   subtitle: string;
 };
 
@@ -31,7 +32,7 @@ const ORBS = [
   { x: "55%", y: "28%",  size: 160, blur: 35,  color: "#E8DDD0", z: -80,  opacity: 0.50 },
 ] as const;
 
-export default function Hero({ slides, name, subtitle }: HeroProps) {
+export default function Hero({ slides, name, fullName, subtitle }: HeroProps) {
   const [active, setActive] = useState(0);
   const count = slides.length;
   const hasMedia = count > 0;
@@ -178,7 +179,7 @@ export default function Hero({ slides, name, subtitle }: HeroProps) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1.1, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
           style={reduce ? undefined : { rotateX: tiltX, rotateY: tiltY }}
-          className={`display text-[40px] leading-tight sm:text-[56px] md:text-[72px] ${
+          className={`display text-[52px] leading-none tracking-[0.06em] sm:text-[72px] md:text-[96px] ${
             hasMedia
               ? "text-on-dark drop-shadow-[0_2px_24px_rgba(92,74,58,0.45)]"
               : "text-text-primary"
@@ -186,12 +187,26 @@ export default function Hero({ slides, name, subtitle }: HeroProps) {
         >
           {name}
         </motion.h1>
+
+        {fullName && (
+          <motion.p
+            initial={reduce ? false : { opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1], delay: 0.35 }}
+            className={`mt-3 text-[13px] tracking-[0.18em] ${
+              hasMedia ? "text-on-dark/70" : "text-text-secondary"
+            }`}
+          >
+            {fullName}
+          </motion.p>
+        )}
+
         <motion.p
           initial={reduce ? false : { opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1, ease: [0.22, 1, 0.36, 1], delay: 0.45 }}
-          className={`mt-4 text-[11px] uppercase tracking-[0.24em] ${
-            hasMedia ? "text-on-dark/85" : "text-text-secondary"
+          transition={{ duration: 1, ease: [0.22, 1, 0.36, 1], delay: 0.55 }}
+          className={`mt-2 text-[10px] uppercase tracking-[0.28em] ${
+            hasMedia ? "text-on-dark/60" : "text-text-muted"
           }`}
         >
           {subtitle}

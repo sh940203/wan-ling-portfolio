@@ -38,8 +38,7 @@ export const site = {
 
   // About 頁
   about: {
-    photo:
-      "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=1600&auto=format&fit=crop",
+    photo: "",
     bioZh: "江婉綾，影像創作與剪接工作者，剛從時尚經營科系畢業。擅長以暖色調與細膩的節奏說故事，喜歡把日常的素材剪成有情緒、有節奏的影像。相信每一個畫面都能傳遞感受，也享受在剪接檯上把素材變成故事的過程。",
     bioEn: "Wan-Ling Chiang is a video editor and visual storyteller, recently graduated. She tells stories through warm tones and a delicate sense of rhythm, turning everyday footage into images with emotion and pace. She believes every frame can carry feeling, and loves the craft of turning footage into story at the edit.",
     skills: [

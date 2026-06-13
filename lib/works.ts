@@ -165,3 +165,16 @@ export async function deleteWork(id: string): Promise<void> {
   await db.execute({ sql: `DELETE FROM works WHERE id = ?`, args: [id] });
   revalidatePublic();
 }
+
+export async function updateWorkTitle(
+  id: string,
+  title: string,
+  titleEn: string
+): Promise<void> {
+  const db = await getDb();
+  await db.execute({
+    sql: `UPDATE works SET title=?, title_en=? WHERE id=?`,
+    args: [title, titleEn, id],
+  });
+  revalidatePublic();
+}

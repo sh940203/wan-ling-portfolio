@@ -35,6 +35,12 @@ export default async function AdminLayout({
                   Works
                 </Link>
                 <Link
+                  href="/admin/works/batch"
+                  className="text-[11px] uppercase tracking-[0.12em] text-text-secondary transition-colors hover:text-text-primary"
+                >
+                  Batch
+                </Link>
+                <Link
                   href="/admin/settings"
                   className="text-[11px] uppercase tracking-[0.12em] text-text-secondary transition-colors hover:text-text-primary"
                 >

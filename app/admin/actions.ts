@@ -11,6 +11,7 @@ import {
   createWork,
   updateWork,
   deleteWork,
+  updateWorkTitle,
   type WorkInput,
 } from "@/lib/works";
 import { getSettings, saveSettings } from "@/lib/settings";
@@ -91,6 +92,23 @@ export async function deleteWorkAction(formData: FormData) {
   const id = str(formData, "id");
   if (id) await deleteWork(id);
   redirect("/admin?deleted=1");
+}
+
+/* ── 批次更新作品標題 ── */
+
+export async function batchUpdateTitlesAction(formData: FormData) {
+  await requireAuth();
+  const ids = formData.getAll("id") as string[];
+  await Promise.all(
+    ids.map((id) =>
+      updateWorkTitle(
+        id,
+        String(formData.get(`title_${id}`) ?? "").trim(),
+        String(formData.get(`titleEn_${id}`) ?? "").trim()
+      )
+    )
+  );
+  redirect("/admin/works/batch?saved=1");
 }
 
 /* ── 站台設定 ── */

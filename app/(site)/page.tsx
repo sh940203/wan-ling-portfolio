@@ -30,7 +30,8 @@ export default async function Home() {
     <>
       <Hero
         slides={slides}
-        name={site.name.en}
+        name={site.name.brand}
+        fullName={site.name.en}
         subtitle={site.hero.subtitle}
       />
 
