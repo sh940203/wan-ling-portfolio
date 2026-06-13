@@ -38,7 +38,7 @@ export const site = {
 
   // About 頁
   about: {
-    photo: "/photo-portrait.jpg",
+    photo: "/photo-event-stage.jpg",
     bioZh: "嶺東科大時尚經營系應屆畢業生，曾擔任短影音小編和畢製公關，負責 IG、Threads 社群內容製作與活動宣傳。實際參與貼文企劃、文案撰寫與短影音剪輯拍攝，並具備基礎視覺排版能力，能依品牌需求執行社群內容製作並配合調整內容方向。熟悉社群運作節奏並擅長關注熱門趨勢，能快速上手社群行銷相關工作。",
     bioEn: "Recent graduate of Ling Tung University's Fashion Business & Merchandising program. Served as short-video editor and PR coordinator for her graduation project, managing IG and Threads content creation and event promotion. Experienced in post planning, copywriting, and short-form video production with solid visual layout skills. Comfortable adapting to brand needs and staying on top of trending content.",
     skills: [
@@ -83,7 +83,7 @@ export const site = {
 
 export const navLinks = [
   { href: "/", label: "Home" },
-  { href: "/work", label: "Work" },
   { href: "/about", label: "About" },
+  { href: "/work", label: "Work" },
   { href: "/contact", label: "Contact" },
 ] as const;
