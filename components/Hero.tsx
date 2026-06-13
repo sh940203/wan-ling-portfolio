@@ -36,6 +36,10 @@ export default function Hero({ slides, name, fullName, subtitle }: HeroProps) {
   const [active, setActive] = useState(0);
   const count = slides.length;
   const hasMedia = count > 0;
+  const hasVideo = slides.some((s) => s.type === "video");
+  // cinematic = video-backed dark full-bleed; portrait = static photo centered on warm bg
+  const isCinematic = hasMedia && hasVideo;
+  const isPortrait = hasMedia && !hasVideo;
   const reduce = useReducedMotion();
 
   const sectionRef = useRef<HTMLElement>(null);
@@ -44,14 +48,13 @@ export default function Hero({ slides, name, fullName, subtitle }: HeroProps) {
     offset: ["start start", "end start"],
   });
 
-  // Scroll-linked parallax (existing)
   const nameY = useTransform(scrollYProgress, [0, 1], [0, -90]);
   const nameOpacity = useTransform(scrollYProgress, [0, 0.55], [1, 0]);
   const bgY = useTransform(scrollYProgress, [0, 1], [0, 80]);
   const bgScale = useTransform(scrollYProgress, [0, 1], [1, 1.18]);
   const cueOpacity = useTransform(scrollYProgress, [0, 0.12], [1, 0]);
 
-  // Mouse-driven 3D tilt for orbs
+  // Mouse-driven 3D tilt for orbs (no-media mode only)
   const rawTiltX = useMotionValue(0);
   const rawTiltY = useMotionValue(0);
   const tiltX = useSpring(rawTiltX, { stiffness: 40, damping: 18 });
@@ -67,12 +70,14 @@ export default function Hero({ slides, name, fullName, subtitle }: HeroProps) {
     return () => window.removeEventListener("mousemove", onMove);
   }, [reduce, rawTiltX, rawTiltY]);
 
-  // Slide carousel
   useEffect(() => {
     if (count <= 1 || reduce) return;
     const id = setInterval(() => setActive((i) => (i + 1) % count), 2000);
     return () => clearInterval(id);
   }, [count, reduce]);
+
+  const portraitSlide = isPortrait ? slides[active] : null;
+  const portraitSrc = portraitSlide?.type === "image" ? portraitSlide.src : "";
 
   return (
     <section
@@ -83,7 +88,7 @@ export default function Hero({ slides, name, fullName, subtitle }: HeroProps) {
           "radial-gradient(120% 80% at 30% 20%, #F0E8DC 0%, #E8DDD0 38%, #DDD0C0 72%, #D2C2AE 100%)",
       }}
     >
-      {/* ── 3D Bokeh Orb Layer ── */}
+      {/* ── Bokeh orbs — only when no media (pure warm abstract bg) ── */}
       {!hasMedia && (
         <div
           className="pointer-events-none absolute inset-0 overflow-hidden"
@@ -118,49 +123,85 @@ export default function Hero({ slides, name, fullName, subtitle }: HeroProps) {
         </div>
       )}
 
-      {/* ── Media background (video / image) ── */}
-      <motion.div
-        className="absolute inset-0"
-        style={reduce ? undefined : { y: bgY, scale: bgScale }}
-      >
-        {slides.map((slide, i) => (
-          <div
-            key={i}
-            aria-hidden={i !== active}
-            className={`absolute inset-0 transition-opacity duration-[1200ms] ease-soft ${
-              i === active ? "opacity-100" : "opacity-0"
-            }`}
-          >
-            {slide.type === "video" ? (
-              <video
-                className="h-full w-full object-cover object-top"
-                src={slide.src}
-                poster={slide.poster}
-                autoPlay
-                muted
-                loop
-                playsInline
-              />
-            ) : (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={slide.src}
-                alt=""
-                className={`h-full w-full object-cover object-top ${
-                  i === active && !reduce
-                    ? "animate-[kenburns_8s_ease-out_both]"
-                    : ""
-                }`}
-              />
-            )}
-          </div>
-        ))}
-      </motion.div>
+      {/* ── Portrait mode: warm radial spotlight behind subject ── */}
+      {isPortrait && (
+        <div
+          className="pointer-events-none absolute inset-0 z-[1]"
+          style={{
+            background:
+              "radial-gradient(ellipse 65% 75% at 50% 36%, rgba(208,188,162,0.52) 0%, transparent 68%)",
+          }}
+        />
+      )}
+
+      {/* ── Portrait mode: centered figure, bottom-anchored, fades into warm bg ── */}
+      {isPortrait && portraitSrc && (
+        <div className="absolute inset-x-0 bottom-0 z-[2] flex justify-center">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={portraitSrc}
+            alt=""
+            className="block"
+            style={{
+              height: "auto",
+              width: "auto",
+              maxHeight: "84vh",
+              maxWidth: "100%",
+              mixBlendMode: "multiply",
+              WebkitMaskImage:
+                "linear-gradient(to bottom, black 58%, transparent 92%)",
+              maskImage:
+                "linear-gradient(to bottom, black 58%, transparent 92%)",
+            }}
+          />
+        </div>
+      )}
+
+      {/* ── Cinematic mode: full-bleed video / image background ── */}
+      {isCinematic && (
+        <motion.div
+          className="absolute inset-0"
+          style={reduce ? undefined : { y: bgY, scale: bgScale }}
+        >
+          {slides.map((slide, i) => (
+            <div
+              key={i}
+              aria-hidden={i !== active}
+              className={`absolute inset-0 transition-opacity duration-[1200ms] ease-soft ${
+                i === active ? "opacity-100" : "opacity-0"
+              }`}
+            >
+              {slide.type === "video" ? (
+                <video
+                  className="h-full w-full object-cover object-top"
+                  src={slide.src}
+                  poster={slide.poster}
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                />
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={slide.src}
+                  alt=""
+                  className={`h-full w-full object-cover object-top ${
+                    i === active && !reduce
+                      ? "animate-[kenburns_8s_ease-out_both]"
+                      : ""
+                  }`}
+                />
+              )}
+            </div>
+          ))}
+        </motion.div>
+      )}
 
       {/* Cinematic dark gradient overlay */}
-      {hasMedia && (
+      {isCinematic && (
         <div
-          className="absolute inset-0"
+          className="absolute inset-0 z-10"
           style={{
             background:
               "linear-gradient(to bottom, rgba(6,4,2,0.06) 0%, transparent 26%, rgba(6,4,2,0.48) 60%, rgba(6,4,2,0.78) 82%, rgba(6,4,2,0.88) 100%)",
@@ -168,8 +209,8 @@ export default function Hero({ slides, name, fullName, subtitle }: HeroProps) {
         />
       )}
 
-      {/* Letterbox bars */}
-      {hasMedia && (
+      {/* Letterbox bars — cinematic only */}
+      {isCinematic && (
         <>
           <div
             aria-hidden
@@ -184,21 +225,28 @@ export default function Hero({ slides, name, fullName, subtitle }: HeroProps) {
         </>
       )}
 
-      {/* ── Central name (scroll parallax + fade-in) ── */}
+      {/* ── Name / subtitle text ── */}
       <motion.div
         className={`relative z-30 flex h-full flex-col items-center px-6 text-center ${
-          hasMedia ? "justify-end pb-16 md:pb-[72px]" : "justify-center"
+          isCinematic
+            ? "justify-end pb-16 md:pb-[72px]"
+            : isPortrait
+            ? "justify-end pb-10 md:pb-14"
+            : "justify-center"
         }`}
         style={reduce ? undefined : { y: nameY, opacity: nameOpacity }}
       >
-        {/* Brand name with 3D float on mouse move (subtle depth) */}
         <motion.h1
           initial={reduce ? false : { opacity: 0, y: 26 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1.1, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
-          style={reduce || hasMedia ? undefined : { rotateX: tiltX, rotateY: tiltY }}
+          style={
+            reduce || isCinematic || isPortrait
+              ? undefined
+              : { rotateX: tiltX, rotateY: tiltY }
+          }
           className={`display leading-none tracking-[0.06em] ${
-            hasMedia
+            isCinematic
               ? "text-[38px] text-white sm:text-[50px] md:text-[66px]"
               : "text-[52px] text-text-primary sm:text-[72px] md:text-[96px]"
           }`}
@@ -212,7 +260,7 @@ export default function Hero({ slides, name, fullName, subtitle }: HeroProps) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1], delay: 0.35 }}
             className={`mt-3 text-[13px] tracking-[0.18em] ${
-              hasMedia ? "text-white/70" : "text-text-secondary"
+              isCinematic ? "text-white/70" : "text-text-secondary"
             }`}
           >
             {fullName}
@@ -224,13 +272,13 @@ export default function Hero({ slides, name, fullName, subtitle }: HeroProps) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, ease: [0.22, 1, 0.36, 1], delay: 0.55 }}
           className={`mt-2 text-[10px] uppercase tracking-[0.28em] ${
-            hasMedia ? "text-white/55" : "text-text-muted"
+            isCinematic ? "text-white/55" : "text-text-muted"
           }`}
         >
           {subtitle}
         </motion.p>
 
-        {/* Floating vertical line accent */}
+        {/* Floating vertical line — no-media mode only */}
         {!hasMedia && (
           <motion.div
             initial={reduce ? false : { scaleY: 0, opacity: 0 }}
@@ -242,12 +290,12 @@ export default function Hero({ slides, name, fullName, subtitle }: HeroProps) {
         )}
       </motion.div>
 
-      {/* Scroll cue — sits above the bottom letterbox bar when in cinematic mode */}
+      {/* Scroll cue */}
       <motion.a
         href="#selected-works"
         style={reduce ? undefined : { opacity: cueOpacity }}
         className={`absolute z-30 text-[10px] uppercase tracking-[0.18em] transition-colors ${
-          hasMedia
+          isCinematic
             ? "bottom-[54px] right-5 text-white/60 hover:text-white md:right-10"
             : "bottom-6 right-5 text-text-muted hover:text-text-primary md:right-10"
         }`}
