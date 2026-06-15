@@ -8,6 +8,9 @@ export const metadata: Metadata = {
   description: "Let's work together. Get in touch for collaboration or hire.",
 };
 
+// 讀 DB 設定（email、socials 等），需 ISR 才會反映設定變更
+export const revalidate = 60;
+
 export default async function ContactPage() {
   const site = await getSettings();
   const socials = [

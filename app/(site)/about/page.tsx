@@ -11,6 +11,9 @@ export const metadata: Metadata = {
   title: "About — WAN-LING",
 };
 
+// 讀 DB 設定（about.photo 等），需 ISR 才會反映後台/設定變更，否則 build 後永久靜態
+export const revalidate = 60;
+
 export default async function AboutPage() {
   const site = await getSettings();
   return (
