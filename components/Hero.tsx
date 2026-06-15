@@ -219,11 +219,12 @@ export default function Hero({ slides, name, fullName, subtitle, posterStyle = "
                 <img
                   src={slide.src}
                   alt=""
-                  className={`h-full w-full object-cover object-top ${
+                  className={`h-full w-full object-cover ${
                     i === active && !reduce
                       ? "animate-[kenburns_8s_ease-out_both]"
                       : ""
                   }`}
+                  style={{ objectPosition: "40% 42%" }}
                 />
               )}
             </div>
