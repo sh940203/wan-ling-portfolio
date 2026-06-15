@@ -1,8 +1,9 @@
-// One-off: point hero cover at IMG_0557.jpg in landscape mode (updates Turso DB row).
+// One-off: swap hero cover ↔ about banner in the Turso settings row.
+//   hero cover  -> graduation arms-crossed portrait, centered (portrait mode)
+//   about banner -> seaside lifestyle photo (wide)
 import { createClient } from "@libsql/client";
 import { readFileSync } from "fs";
 
-// load .env.local
 for (const line of readFileSync(new URL("../.env.local", import.meta.url), "utf8").split("\n")) {
   const m = line.match(/^([A-Z_]+)=(.*)$/);
   if (m) process.env[m[1]] = m[2];
@@ -22,13 +23,24 @@ if (!row) {
 
 const data = JSON.parse(String(row.value));
 data.hero = data.hero || {};
-console.log("before:", { poster: data.hero.poster, posterStyle: data.hero.posterStyle });
-data.hero.poster = "/IMG_0557.jpg";
-data.hero.posterStyle = "landscape";
+data.about = data.about || {};
+console.log("before:", {
+  heroPoster: data.hero.poster,
+  heroStyle: data.hero.posterStyle,
+  aboutPhoto: data.about.photo,
+});
+
+data.hero.poster = "/photo-portrait.jpg";
+data.hero.posterStyle = "portrait";
+data.about.photo = "/IMG_0557.jpg";
 
 await db.execute({
   sql: `UPDATE settings SET value = ? WHERE key = 'site'`,
   args: [JSON.stringify(data)],
 });
-console.log("after: ", { poster: data.hero.poster, posterStyle: data.hero.posterStyle });
+console.log("after: ", {
+  heroPoster: data.hero.poster,
+  heroStyle: data.hero.posterStyle,
+  aboutPhoto: data.about.photo,
+});
 console.log("done.");

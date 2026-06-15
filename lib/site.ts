@@ -32,15 +32,15 @@ export const site = {
     // 放一支自己的影片到 public/ 後填 "/showreel.mp4"，會用 <video> 背景播放
     videoUrl: "",
     // 靜態底圖（影片載入前 / reduced-motion 時顯示）；留空則用暖色漸層
-    poster: "/IMG_0557.jpg",
+    poster: "/photo-portrait.jpg",
     // "landscape": 全螢幕蓋滿 + 暖漸層疊字；"portrait": 人物置中在暖色背景上
-    posterStyle: "landscape" as "landscape" | "portrait",
+    posterStyle: "portrait" as "landscape" | "portrait",
     subtitle: "Video Editor · Storyteller — Taichung",
   },
 
   // About 頁
   about: {
-    photo: "/photo-event-stage.jpg",
+    photo: "/IMG_0557.jpg",
     bioZh: "嶺東科大時尚經營系應屆畢業生，曾擔任短影音小編和畢製公關，負責 IG、Threads 社群內容製作與活動宣傳。實際參與貼文企劃、文案撰寫與短影音剪輯拍攝，並具備基礎視覺排版能力，能依品牌需求執行社群內容製作並配合調整內容方向。熟悉社群運作節奏並擅長關注熱門趨勢，能快速上手社群行銷相關工作。",
     bioEn: "Recent graduate of Ling Tung University's Fashion Business & Merchandising program. Served as short-video editor and PR coordinator for her graduation project, managing IG and Threads content creation and event promotion. Experienced in post planning, copywriting, and short-form video production with solid visual layout skills. Comfortable adapting to brand needs and staying on top of trending content.",
     skills: [
