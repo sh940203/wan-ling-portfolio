@@ -19,6 +19,7 @@ type HeroProps = {
   name: string;
   fullName?: string;
   subtitle: string;
+  posterStyle?: "landscape" | "portrait";
 };
 
 // Warm bokeh orbs — placed at varying CSS depths (translateZ) for 3D parallax
@@ -32,14 +33,15 @@ const ORBS = [
   { x: "55%", y: "28%",  size: 160, blur: 35,  color: "#E8DDD0", z: -80,  opacity: 0.50 },
 ] as const;
 
-export default function Hero({ slides, name, fullName, subtitle }: HeroProps) {
+export default function Hero({ slides, name, fullName, subtitle, posterStyle = "portrait" }: HeroProps) {
   const [active, setActive] = useState(0);
   const count = slides.length;
   const hasMedia = count > 0;
   const hasVideo = slides.some((s) => s.type === "video");
-  // cinematic = video-backed dark full-bleed; portrait = static photo centered on warm bg
-  const isCinematic = hasMedia && hasVideo;
-  const isPortrait = hasMedia && !hasVideo;
+  // cinematic = video / landscape poster: dark full-bleed + gradient overlay
+  // portrait  = studio photo: centered figure on warm bg, mix-blend multiply
+  const isCinematic = hasMedia && (hasVideo || posterStyle === "landscape");
+  const isPortrait = hasMedia && !hasVideo && posterStyle === "portrait";
   const reduce = useReducedMotion();
 
   const sectionRef = useRef<HTMLElement>(null);
@@ -229,19 +231,20 @@ export default function Hero({ slides, name, fullName, subtitle }: HeroProps) {
         </motion.div>
       )}
 
-      {/* Cinematic dark gradient overlay */}
+      {/* Gradient overlay — darker for video, lighter/warmer for landscape photo */}
       {isCinematic && (
         <div
           className="absolute inset-0 z-10"
           style={{
-            background:
-              "linear-gradient(to bottom, rgba(6,4,2,0.06) 0%, transparent 26%, rgba(6,4,2,0.48) 60%, rgba(6,4,2,0.78) 82%, rgba(6,4,2,0.88) 100%)",
+            background: hasVideo
+              ? "linear-gradient(to bottom, rgba(6,4,2,0.06) 0%, transparent 26%, rgba(6,4,2,0.48) 60%, rgba(6,4,2,0.78) 82%, rgba(6,4,2,0.88) 100%)"
+              : "linear-gradient(to bottom, rgba(12,8,4,0) 0%, rgba(12,8,4,0.08) 35%, rgba(12,8,4,0.38) 65%, rgba(12,8,4,0.65) 85%, rgba(12,8,4,0.75) 100%)",
           }}
         />
       )}
 
-      {/* Letterbox bars — cinematic only */}
-      {isCinematic && (
+      {/* Letterbox bars — video cinematic only */}
+      {isCinematic && hasVideo && (
         <>
           <div
             aria-hidden
@@ -326,8 +329,10 @@ export default function Hero({ slides, name, fullName, subtitle }: HeroProps) {
         href="#selected-works"
         style={reduce ? undefined : { opacity: cueOpacity }}
         className={`absolute z-30 text-[10px] uppercase tracking-[0.18em] transition-colors ${
-          isCinematic
+          isCinematic && hasVideo
             ? "bottom-[54px] right-5 text-white/60 hover:text-white md:right-10"
+            : isCinematic
+            ? "bottom-6 right-5 text-white/60 hover:text-white md:right-10"
             : "bottom-6 right-5 text-text-muted hover:text-text-primary md:right-10"
         }`}
       >

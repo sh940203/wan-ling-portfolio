@@ -32,7 +32,9 @@ export const site = {
     // 放一支自己的影片到 public/ 後填 "/showreel.mp4"，會用 <video> 背景播放
     videoUrl: "",
     // 靜態底圖（影片載入前 / reduced-motion 時顯示）；留空則用暖色漸層
-    poster: "/photo-portrait.jpg",
+    poster: "/IMG_0557.jpg",
+    // "landscape": 全螢幕蓋滿 + 暖漸層疊字；"portrait": 人物置中在暖色背景上
+    posterStyle: "landscape" as "landscape" | "portrait",
     subtitle: "Video Editor · Storyteller — Taichung",
   },
 

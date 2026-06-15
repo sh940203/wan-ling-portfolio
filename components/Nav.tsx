@@ -61,8 +61,9 @@ export default function Nav({ brand = site.name.brand }: { brand?: string }) {
             aria-label={open ? "Close menu" : "Open menu"}
             aria-expanded={open}
           >
+            {/* Three lines → X animation */}
             <motion.span
-              animate={open ? { rotate: 45, y: 6 } : { rotate: 0, y: 0 }}
+              animate={open ? { rotate: 45, y: 0 } : { rotate: 0, y: -6 }}
               transition={{ duration: 0.3, ease: EASE }}
               className="absolute h-[1.5px] w-5 bg-text-primary"
             />
@@ -70,10 +71,9 @@ export default function Nav({ brand = site.name.brand }: { brand?: string }) {
               animate={open ? { opacity: 0, scaleX: 0 } : { opacity: 1, scaleX: 1 }}
               transition={{ duration: 0.2 }}
               className="absolute h-[1.5px] w-5 bg-text-primary"
-              style={{ y: 0 }}
             />
             <motion.span
-              animate={open ? { rotate: -45, y: -6 } : { rotate: 0, y: 0 }}
+              animate={open ? { rotate: -45, y: 0 } : { rotate: 0, y: 6 }}
               transition={{ duration: 0.3, ease: EASE }}
               className="absolute h-[1.5px] w-5 bg-text-primary"
             />
@@ -85,31 +85,14 @@ export default function Nav({ brand = site.name.brand }: { brand?: string }) {
       <AnimatePresence>
         {open && (
           <>
-            {/* Blurred + dimmed backdrop */}
-            <motion.div
-              key="backdrop"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.35, ease: "easeOut" }}
-              className="fixed inset-0 z-40 md:hidden"
-              style={{
-                background: "rgba(92,74,58,0.22)",
-                backdropFilter: "blur(18px) saturate(0.75)",
-                WebkitBackdropFilter: "blur(18px) saturate(0.75)",
-                top: "56px", // below sticky header
-              }}
-              onClick={() => setOpen(false)}
-            />
-
-            {/* Menu panel — slides up from bottom edge of header */}
+            {/* White full-screen overlay */}
             <motion.div
               key="panel"
-              initial={reduce ? { opacity: 0 } : { opacity: 0, y: -12 }}
+              initial={reduce ? { opacity: 0 } : { opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={reduce ? { opacity: 0 } : { opacity: 0, y: -8 }}
-              transition={{ duration: 0.4, ease: EASE }}
-              className="fixed inset-x-0 z-50 md:hidden"
+              exit={reduce ? { opacity: 0 } : { opacity: 0, y: -6 }}
+              transition={{ duration: 0.35, ease: EASE }}
+              className="fixed inset-x-0 bottom-0 z-50 bg-white md:hidden"
               style={{ top: "56px" }}
             >
               <ul className="flex flex-col items-center justify-center gap-0 pt-[12vh] pb-16">

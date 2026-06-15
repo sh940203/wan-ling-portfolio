@@ -33,6 +33,7 @@ export default async function Home() {
         name={site.name.brand}
         fullName={site.name.en}
         subtitle={site.hero.subtitle}
+        posterStyle={site.hero.posterStyle ?? "portrait"}
       />
 
       {/* ── 自我介紹 ── */}
