@@ -5,6 +5,12 @@ import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { useReducedMotion } from "framer-motion";
 import type { MotionValue } from "framer-motion";
 
+function haptic() {
+  if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+    navigator.vibrate(6);
+  }
+}
+
 export default function TiltCard({
   children,
   className = "",
@@ -60,6 +66,30 @@ export default function TiltCard({
     scale.set(1.03);
   }
 
+  // ── Touch / mobile ──────────────────────────────────────────────
+  function onTouchStart() {
+    haptic();
+    scale.set(1.03);
+  }
+
+  function onTouchMove(e: React.TouchEvent<HTMLDivElement>) {
+    if (!ref.current || e.touches.length === 0) return;
+    const touch = e.touches[0];
+    const r = ref.current.getBoundingClientRect();
+    const px = Math.max(0, Math.min(1, (touch.clientX - r.left) / r.width));
+    const py = Math.max(0, Math.min(1, (touch.clientY - r.top) / r.height));
+    rawX.set(px - 0.5);
+    rawY.set(py - 0.5);
+    glareX.set(px * 100);
+    glareY.set(py * 100);
+  }
+
+  function onTouchEnd() {
+    rawX.set(0);
+    rawY.set(0);
+    scale.set(1);
+  }
+
   if (reduce) return <div className={className}>{children}</div>;
 
   return (
@@ -68,6 +98,9 @@ export default function TiltCard({
         onMouseMove={onMove}
         onMouseEnter={onEnter}
         onMouseLeave={onLeave}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
         style={{
           rotateX: rotX,
           rotateY: rotY,

@@ -70,6 +70,37 @@ export default function Hero({ slides, name, fullName, subtitle }: HeroProps) {
     return () => window.removeEventListener("mousemove", onMove);
   }, [reduce, rawTiltX, rawTiltY]);
 
+  // Mobile gyroscope — drives the same bokeh tilt as mouse on desktop
+  useEffect(() => {
+    if (reduce || hasMedia) return; // bokeh orbs only exist in no-media mode
+    if (typeof window === "undefined") return;
+
+    const handle = (e: DeviceOrientationEvent) => {
+      if (e.gamma === null) return;
+      const gamma = Math.max(-45, Math.min(45, e.gamma ?? 0));          // left-right
+      const beta  = Math.max(-45, Math.min(45, (e.beta ?? 45) - 45));  // offset from natural hold
+      rawTiltY.set(gamma * 0.2);
+      rawTiltX.set(beta  * -0.12);
+    };
+
+    // iOS 13+ requires explicit permission from a user gesture; try silently first
+    const DevOri = DeviceOrientationEvent as unknown as {
+      requestPermission?: () => Promise<string>;
+    };
+    if (typeof DevOri.requestPermission === "function") {
+      DevOri.requestPermission()
+        .then((s) => {
+          if (s === "granted")
+            window.addEventListener("deviceorientation", handle, true);
+        })
+        .catch(() => {});
+    } else {
+      window.addEventListener("deviceorientation", handle, true);
+    }
+
+    return () => window.removeEventListener("deviceorientation", handle, true);
+  }, [reduce, hasMedia, rawTiltX, rawTiltY]);
+
   useEffect(() => {
     if (count <= 1 || reduce) return;
     const id = setInterval(() => setActive((i) => (i + 1) % count), 2000);
