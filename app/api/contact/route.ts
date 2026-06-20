@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { site } from "@/lib/site";
+import { rateLimit, ipFromRequest } from "@/lib/rate-limit";
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 // 收件信箱：優先用環境變數，否則退回預設 site.email
@@ -13,6 +14,19 @@ function isEmail(v: string) {
 }
 
 export async function POST(req: Request) {
+  // 速率限制：同一 IP 每 10 分鐘最多 5 封，避免被灌爆耗盡寄信額度
+  const { success, reset } = await rateLimit(`contact:${ipFromRequest(req)}`, {
+    max: 5,
+    windowSec: 600,
+  });
+  if (!success) {
+    const retry = Math.max(1, Math.ceil((reset - Date.now()) / 1000));
+    return NextResponse.json(
+      { error: "請求過於頻繁，請稍後再試 / Too many requests." },
+      { status: 429, headers: { "Retry-After": String(retry) } }
+    );
+  }
+
   let body: { name?: string; email?: string; message?: string };
   try {
     body = await req.json();

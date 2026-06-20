@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { timingSafeEqual } from "crypto";
 import { COOKIE_NAME, signSession, verifyToken } from "./auth-core";
 
 export async function createSession(): Promise<void> {
@@ -28,5 +29,13 @@ export function checkPassword(pw: string): boolean {
     process.env.ADMIN_PASSWORD ||
     (process.env.NODE_ENV === "production" ? "" : "admin");
   if (!expected) return false;
-  return pw === expected;
+  // 常數時間比對，避免以回應時間差推測密碼（timing attack）。
+  // 長度不同時用 expected 自我比對，讓「長度錯誤」與「內容錯誤」耗時一致。
+  const a = Buffer.from(pw);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length) {
+    timingSafeEqual(b, b);
+    return false;
+  }
+  return timingSafeEqual(a, b);
 }

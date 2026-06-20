@@ -1,12 +1,14 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import {
   checkPassword,
   createSession,
   destroySession,
   isAuthed,
 } from "@/lib/auth";
+import { rateLimit } from "@/lib/rate-limit";
 import {
   createWork,
   updateWork,
@@ -32,10 +34,22 @@ const CATEGORIES: Category[] = ["Commercial", "Narrative", "Social", "Music"];
 export async function loginAction(formData: FormData) {
   const pw = str(formData, "password");
   const from = str(formData, "from") || "/admin";
+
+  // 防暴力破解：同一 IP 每 15 分鐘最多 8 次登入嘗試
+  const ip =
+    headers().get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    headers().get("x-real-ip") ||
+    "anon";
+  const { success } = await rateLimit(`login:${ip}`, {
+    max: 8,
+    windowSec: 900,
+  });
+  if (!success) {
+    redirect(`/admin/login?error=rate&from=${encodeURIComponent(from)}`);
+  }
+
   if (!checkPassword(pw)) {
-    redirect(
-      `/admin/login?error=1&from=${encodeURIComponent(from)}`
-    );
+    redirect(`/admin/login?error=1&from=${encodeURIComponent(from)}`);
   }
   await createSession();
   redirect(from.startsWith("/admin") ? from : "/admin");

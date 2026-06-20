@@ -6,6 +6,7 @@ export default function LoginPage({
   searchParams: { error?: string; from?: string };
 }) {
   const error = searchParams.error === "1";
+  const rateLimited = searchParams.error === "rate";
   const from = searchParams.from || "/admin";
 
   return (
@@ -39,6 +40,11 @@ export default function LoginPage({
 
           {error && (
             <p className="text-[12px] text-[#B4543C]">密碼錯誤，請再試一次。</p>
+          )}
+          {rateLimited && (
+            <p className="text-[12px] text-[#B4543C]">
+              嘗試次數過多，請稍後再試。
+            </p>
           )}
 
           <button
