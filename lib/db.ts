@@ -37,6 +37,7 @@ async function ensureSchema(c: Client) {
   } catch {
     /* Turso 等遠端可能不支援，略過 */
   }
+  // 建立基礎表格
   await c.batch(
     [
       `CREATE TABLE IF NOT EXISTS works (
@@ -61,6 +62,12 @@ async function ensureSchema(c: Client) {
     ],
     "write"
   );
+  // DDL migrations — ALTER TABLE 必須在 batch 外單獨執行（SQLite 不允許 DDL in transaction）
+  try {
+    await c.execute(`ALTER TABLE works ADD COLUMN work_type TEXT NOT NULL DEFAULT 'work'`);
+  } catch {
+    // 欄位已存在，略過
+  }
 }
 
 async function seedIfEmpty(c: Client) {

@@ -62,7 +62,17 @@ export default function WorkForm({ work }: { work?: Work }) {
         />
       </Field>
 
-      <div className="grid grid-cols-2 gap-5 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-5">
+        <Field label="歸屬 Type">
+          <select
+            name="workType"
+            defaultValue={work?.workType ?? "work"}
+            className={inputCls}
+          >
+            <option value="work">工作作品</option>
+            <option value="personal">個人作品</option>
+          </select>
+        </Field>
         <Field label="分類 Category">
           <select
             name="category"

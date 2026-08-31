@@ -12,6 +12,14 @@ export const CATEGORIES: Category[] = [
 export const WORK_FILTERS = ["All", ...CATEGORIES] as const;
 export type WorkFilter = (typeof WORK_FILTERS)[number];
 
+// 作品歸屬類型：工作接案 or 個人創作
+export type WorkType = "work" | "personal";
+export const WORK_TYPES: WorkType[] = ["work", "personal"];
+export const WORK_TYPE_LABELS: Record<WorkType, string> = {
+  work: "工作作品",
+  personal: "個人作品",
+};
+
 // 影片方向：直式（Instagram Reels / Shorts）或橫式（Vimeo 等）
 export type Orientation = "vertical" | "horizontal";
 
@@ -24,6 +32,8 @@ export interface Work {
   /** 英文標題（Notion: title_en） */
   titleEn: string;
   category: Category;
+  /** 工作作品 or 個人作品 */
+  workType: WorkType;
   /** 年份（Notion: year）；可能未填 */
   year: number | null;
   /** 影片連結：Instagram Reel 或 Vimeo（Notion: video_url / vimeo_url） */

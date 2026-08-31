@@ -3,7 +3,7 @@ import { randomUUID } from "crypto";
 import { getDb } from "./db";
 import { slugify } from "./slug";
 import { defaultOrientation } from "./video";
-import type { Category, Orientation, Work } from "./types";
+import type { Category, Orientation, Work, WorkType } from "./types";
 
 const VALID_CATEGORIES: Category[] = [
   "Commercial",
@@ -19,6 +19,7 @@ function rowToWork(r: any): Work {
     title: String(r.title ?? ""),
     titleEn: String(r.title_en ?? ""),
     category: (VALID_CATEGORIES.includes(r.category) ? r.category : "Social") as Category,
+    workType: (r.work_type === "personal" ? "personal" : "work") as WorkType,
     year: r.year == null ? null : Number(r.year),
     videoUrl: r.video_url ?? null,
     orientation: (r.orientation === "horizontal" ? "horizontal" : "vertical") as Orientation,
@@ -74,6 +75,7 @@ export type WorkInput = {
   title: string;
   titleEn: string;
   category: Category;
+  workType: WorkType;
   year: number | null;
   videoUrl: string | null;
   orientation?: Orientation;
@@ -113,14 +115,15 @@ export async function createWork(input: WorkInput): Promise<string> {
   const orientation = input.orientation ?? defaultOrientation(input.videoUrl);
   await db.execute({
     sql: `INSERT INTO works
-      (id, slug, title, title_en, category, year, video_url, orientation, cover_image, description, featured, "order")
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
+      (id, slug, title, title_en, category, work_type, year, video_url, orientation, cover_image, description, featured, "order")
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     args: [
       id,
       slug,
       input.title,
       input.titleEn,
       input.category,
+      input.workType,
       input.year,
       input.videoUrl,
       orientation,
@@ -140,13 +143,14 @@ export async function updateWork(id: string, input: WorkInput): Promise<void> {
   const orientation = input.orientation ?? defaultOrientation(input.videoUrl);
   await db.execute({
     sql: `UPDATE works SET
-      slug=?, title=?, title_en=?, category=?, year=?, video_url=?, orientation=?, cover_image=?, description=?, featured=?, "order"=?
+      slug=?, title=?, title_en=?, category=?, work_type=?, year=?, video_url=?, orientation=?, cover_image=?, description=?, featured=?, "order"=?
       WHERE id=?`,
     args: [
       slug,
       input.title,
       input.titleEn,
       input.category,
+      input.workType,
       input.year,
       input.videoUrl,
       orientation,
@@ -176,5 +180,36 @@ export async function updateWorkTitle(
     sql: `UPDATE works SET title=?, title_en=? WHERE id=?`,
     args: [title, titleEn, id],
   });
+  revalidatePublic();
+}
+
+// 批次設定歸屬類型
+export async function batchSetWorkType(
+  ids: string[],
+  workType: WorkType
+): Promise<void> {
+  const db = await getDb();
+  await db.batch(
+    ids.map((id) => ({
+      sql: `UPDATE works SET work_type = ? WHERE id = ?`,
+      args: [workType, id],
+    })),
+    "write"
+  );
+  revalidatePublic();
+}
+
+// 批次更新排序：傳入 [{id, order}] 陣列，在單一 transaction 內完成
+export async function reorderWorks(
+  items: { id: string; order: number }[]
+): Promise<void> {
+  const db = await getDb();
+  await db.batch(
+    items.map(({ id, order }) => ({
+      sql: `UPDATE works SET "order" = ? WHERE id = ?`,
+      args: [order, id],
+    })),
+    "write"
+  );
   revalidatePublic();
 }

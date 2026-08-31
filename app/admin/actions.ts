@@ -14,10 +14,12 @@ import {
   updateWork,
   deleteWork,
   updateWorkTitle,
+  reorderWorks,
+  batchSetWorkType,
   type WorkInput,
 } from "@/lib/works";
 import { getSettings, saveSettings } from "@/lib/settings";
-import type { Category, Orientation } from "@/lib/types";
+import type { Category, Orientation, WorkType } from "@/lib/types";
 
 async function requireAuth() {
   if (!(await isAuthed())) redirect("/admin/login");
@@ -28,6 +30,7 @@ function str(fd: FormData, key: string): string {
 }
 
 const CATEGORIES: Category[] = ["Commercial", "Narrative", "Social", "Music"];
+const WORK_TYPES: WorkType[] = ["work", "personal"];
 
 /* ── 登入 / 登出 ── */
 
@@ -69,10 +72,16 @@ function parseWorkInput(fd: FormData): WorkInput {
     ? (str(fd, "category") as Category)
     : "Social";
 
+  const workTypeRaw = str(fd, "workType");
+  const workType: WorkType = WORK_TYPES.includes(workTypeRaw as WorkType)
+    ? (workTypeRaw as WorkType)
+    : "work";
+
   return {
     title: str(fd, "title"),
     titleEn: str(fd, "titleEn"),
     category,
+    workType,
     year: yearRaw ? Number(yearRaw) : null,
     videoUrl: str(fd, "videoUrl") || null,
     orientation:
@@ -174,4 +183,32 @@ export async function saveSettingsAction(formData: FormData) {
 
   await saveSettings(s);
   redirect("/admin/settings?saved=1");
+}
+
+/* ── 作品拖曳排序 ── */
+
+export async function batchSetWorkTypeAction(
+  ids: string[],
+  workType: WorkType
+): Promise<{ ok: boolean }> {
+  await requireAuth();
+  if (!Array.isArray(ids) || ids.length === 0) return { ok: false };
+  if (!WORK_TYPES.includes(workType)) return { ok: false };
+  await batchSetWorkType(ids, workType);
+  return { ok: true };
+}
+
+export async function reorderWorksAction(
+  items: { id: string; order: number }[]
+): Promise<{ ok: boolean }> {
+  await requireAuth();
+  if (!Array.isArray(items) || items.length === 0) return { ok: false };
+  // 驗證每個 item 格式
+  for (const item of items) {
+    if (typeof item.id !== "string" || typeof item.order !== "number") {
+      return { ok: false };
+    }
+  }
+  await reorderWorks(items);
+  return { ok: true };
 }

@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@hello-pangea/dnd": "^18.0.1",
     "@libsql/client": "^0.17.3",
     "@notionhq/client": "^2.2.15",
     "@upstash/ratelimit": "^2.0.8",

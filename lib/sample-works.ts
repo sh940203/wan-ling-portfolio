@@ -1,4 +1,4 @@
-import type { Category, Work } from "./types";
+import type { Category, Work, WorkType } from "./types";
 import { slugify } from "./slug";
 
 // ─────────────────────────────────────────────────────────────────
@@ -15,6 +15,7 @@ type Seed = {
   title: string; // 中文標題
   titleEn: string; // 英文標題（也用來產生網址）
   category: Category;
+  workType?: WorkType;
   featured?: boolean;
   cover?: string; // 可選封面圖路徑/網址
 };
@@ -44,6 +45,7 @@ export const sampleWorks: Work[] = reels.map((r, i) => ({
   title: r.title,
   titleEn: r.titleEn,
   category: r.category,
+  workType: r.workType ?? "work",
   year: null,
   videoUrl: `https://www.instagram.com/reel/${r.code}/`,
   orientation: "vertical",
