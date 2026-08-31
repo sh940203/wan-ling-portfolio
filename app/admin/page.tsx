@@ -1,6 +1,9 @@
 import Link from "next/link";
+import nextDynamic from "next/dynamic";
 import { getAllWorks } from "@/lib/works";
-import WorkGrid from "@/components/admin/WorkGrid";
+
+// @dnd-kit 在 SSR 產生的 aria ID 與 client 不同，必須 client-only 渲染
+const WorkGrid = nextDynamic(() => import("@/components/admin/WorkGrid"), { ssr: false });
 
 export const dynamic = "force-dynamic";
 
