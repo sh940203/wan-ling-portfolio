@@ -2,7 +2,7 @@
 
 import { deleteWorkAction } from "@/app/admin/actions";
 
-export default function DeleteButton({ id }: { id: string }) {
+export default function DeleteButton({ id, small }: { id: string; small?: boolean }) {
   return (
     <form
       action={deleteWorkAction}
@@ -15,7 +15,12 @@ export default function DeleteButton({ id }: { id: string }) {
       <input type="hidden" name="id" value={id} />
       <button
         type="submit"
-        className="text-[11px] uppercase tracking-[0.1em] text-text-muted transition-colors hover:text-[#B4543C]"
+        onClick={(e) => e.stopPropagation()}
+        className={
+          small
+            ? "text-white/70 text-[8px] uppercase tracking-[0.08em] border border-white/30 rounded px-1.5 py-0.5 hover:bg-red-500/60 transition-colors"
+            : "text-[11px] uppercase tracking-[0.1em] text-text-muted transition-colors hover:text-[#B4543C]"
+        }
       >
         Delete
       </button>

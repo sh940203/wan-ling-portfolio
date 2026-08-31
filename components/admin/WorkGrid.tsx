@@ -5,8 +5,8 @@ import Link from "next/link";
 import {
   DndContext,
   closestCenter,
-  MouseSensor,
-  TouchSensor,
+  PointerSensor,
+  KeyboardSensor,
   useSensor,
   useSensors,
   DragOverlay,
@@ -18,6 +18,7 @@ import {
   useSortable,
   rectSortingStrategy,
   arrayMove,
+  sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { reorderWorksAction, batchSetWorkTypeAction } from "@/app/admin/actions";
@@ -32,19 +33,8 @@ const TYPE_LABEL: Record<WorkType, string> = {
   personal: "個人作品",
 };
 
-// ── 卡片外觀（純顯示，不含 dnd hook）──────────────────────────────
-function CardFace({
-  work,
-  index,
-  batchMode,
-  isSelected,
-  pressing,
-  isDragging,
-  overlay,
-  pointerHandlers,
-  dndAttributes,
-  onToggle,
-}: {
+// ── IG 風格正方形格子（純顯示）──────────────────────────────────────
+interface CellProps {
   work: Work;
   index: number;
   batchMode: boolean;
@@ -53,155 +43,148 @@ function CardFace({
   isDragging: boolean;
   overlay: boolean;
   pointerHandlers: Record<string, unknown>;
-  dndAttributes: Record<string, unknown>;
+  dndAttrs: Record<string, unknown>;
   onToggle: (id: string) => void;
-}) {
+}
+
+function Cell({
+  work, index, batchMode, isSelected, pressing, isDragging,
+  overlay, pointerHandlers, dndAttrs, onToggle,
+}: CellProps) {
   const cover = coverUrl(work);
 
-  const cardCls = [
-    "group relative flex flex-col overflow-hidden rounded-xl border-[0.5px] bg-warm-surface",
-    batchMode && isSelected
-      ? "border-text-primary ring-2 ring-text-primary/30"
-      : "border-warm-border",
+  const wrapCls = [
+    "relative aspect-square overflow-hidden group bg-warm-deep",
     overlay
-      ? "shadow-2xl rotate-2 scale-[1.07] opacity-[0.97]"
+      ? "shadow-2xl scale-[1.07] rotate-[2deg] opacity-[0.96] z-50"
       : isDragging
-      ? "opacity-25 scale-[0.97] border-dashed shadow-none"
+      ? "opacity-10"
       : pressing
-      ? "shadow-2xl scale-[1.05] border-warm-mid"
-      : "hover:shadow-md",
-    "transition-all duration-150 ease-out will-change-transform",
-  ].join(" ");
+      ? "scale-[1.04] shadow-2xl z-10"
+      : "",
+    "transition-all duration-[80ms] ease-out will-change-transform",
+    !batchMode && !overlay ? "cursor-grab active:cursor-grabbing" : "",
+    batchMode ? "cursor-pointer" : "",
+  ].filter(Boolean).join(" ");
 
   return (
-    <div className={cardCls}>
-      {/* 縮圖區域 */}
-      <div
-        {...dndAttributes}
-        {...pointerHandlers}
-        onClick={() => { if (batchMode) onToggle(work.id); }}
-        className={[
-          "relative aspect-[9/16] w-full overflow-hidden bg-warm-deep select-none",
-          batchMode ? "cursor-pointer" : "cursor-grab active:cursor-grabbing",
-        ].join(" ")}
-      >
-        {cover ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={cover}
-            alt=""
-            draggable={false}
-            className="h-full w-full object-cover pointer-events-none"
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center">
-            <span className="text-[10px] text-text-muted">No image</span>
+    <div
+      className={wrapCls}
+      {...dndAttrs}
+      {...pointerHandlers}
+      onClick={() => { if (batchMode) onToggle(work.id); }}
+    >
+      {/* 封面圖 */}
+      {cover ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={cover}
+          alt=""
+          draggable={false}
+          className="w-full h-full object-cover pointer-events-none select-none"
+        />
+      ) : (
+        <div className="w-full h-full flex items-center justify-center">
+          <span className="text-text-muted text-[9px]">No image</span>
+        </div>
+      )}
+
+      {/* 一般模式 hover 覆蓋層 */}
+      {!batchMode && !overlay && (
+        <div className="absolute inset-0 bg-black/55 opacity-0 group-hover:opacity-100 transition-opacity duration-150 flex flex-col justify-between p-2">
+          {/* 上方：featured star + 歸屬 */}
+          <div className="flex items-start justify-between">
+            {work.featured ? (
+              <span className="text-amber-300 text-[10px]">★</span>
+            ) : <span />}
+            {work.workType === "personal" && (
+              <span className="text-white/80 text-[8px] tracking-[0.08em] uppercase border border-white/40 rounded px-1 py-0.5">
+                個人
+              </span>
+            )}
           </div>
-        )}
-
-        {/* 順序 badge */}
-        {!overlay && (
-          <span className="absolute left-1.5 top-1.5 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-black/50 px-1.5 text-[9px] font-medium text-white">
-            {index + 1}
-          </span>
-        )}
-
-        {/* 歸屬 badge */}
-        {work.workType === "personal" && (
-          <span className="absolute bottom-1.5 left-1.5 rounded-full bg-black/60 px-1.5 py-0.5 text-[8px] text-white">
-            個人
-          </span>
-        )}
-
-        {work.featured && (
-          <span className="absolute right-1.5 top-1.5 rounded-full bg-black/50 px-1.5 py-0.5 text-[8px] uppercase tracking-[0.08em] text-white">
-            Featured
-          </span>
-        )}
-
-        {/* 批次模式勾選 */}
-        {batchMode && isSelected && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-text-primary">
-              <svg className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
+          {/* 下方：標題 + 操作 */}
+          <div className="flex flex-col gap-1.5">
+            <p className="text-white text-[9px] leading-[1.3] line-clamp-2 opacity-90">
+              {work.titleEn || work.title}
+            </p>
+            <div className="flex items-center gap-2">
+              <Link
+                href={`/admin/works/${work.id}/edit`}
+                onClick={(e) => e.stopPropagation()}
+                className="text-white/90 text-[8px] uppercase tracking-[0.08em] border border-white/40 rounded px-1.5 py-0.5 hover:bg-white/20 transition-colors"
+              >
+                Edit
+              </Link>
+              <DeleteButton id={work.id} small />
             </div>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* 長壓中 — 顯示拖曳提示 icon */}
-        {!batchMode && pressing && !isDragging && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/25 transition-opacity">
-            <svg className="h-7 w-7 text-white drop-shadow" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-              <path strokeLinecap="round" strokeLinejoin="round"
-                d="M8 9l4-4 4 4M8 15l4 4 4-4" />
-            </svg>
-          </div>
-        )}
-      </div>
+      {/* 順序 badge */}
+      {!overlay && (
+        <span className="absolute left-1 top-1 bg-black/50 text-white text-[8px] rounded-full w-[18px] h-[18px] flex items-center justify-center font-medium leading-none">
+          {index + 1}
+        </span>
+      )}
 
-      {/* 標題 + 操作列 */}
-      <div className="flex flex-1 flex-col gap-1 p-2">
-        <p className="line-clamp-2 text-[11px] leading-[1.4] text-text-primary">
-          {work.titleEn || work.title || "(無標題)"}
-        </p>
-        <p className="text-[10px] text-text-muted">
-          {work.category}{work.year ? ` · ${work.year}` : ""}
-        </p>
-        {!overlay && (
-          <div className="mt-auto flex items-center gap-2 pt-1">
-            <Link
-              href={`/admin/works/${work.id}/edit`}
-              className="text-[10px] uppercase tracking-[0.08em] text-text-secondary transition-colors hover:text-text-primary"
-            >
-              Edit
-            </Link>
-            <DeleteButton id={work.id} />
+      {/* 批次選取覆蓋層 */}
+      {batchMode && (
+        <div className={[
+          "absolute inset-0 transition-colors duration-100 flex items-center justify-center",
+          isSelected ? "bg-black/40" : "bg-transparent hover:bg-black/10",
+        ].join(" ")}>
+          <div className={[
+            "w-6 h-6 rounded-full border-2 border-white transition-all flex items-center justify-center",
+            isSelected ? "bg-text-primary border-text-primary scale-110" : "bg-black/20",
+          ].join(" ")}>
+            {isSelected && (
+              <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            )}
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* 長壓中提示（drag 啟動前） */}
+      {!batchMode && !overlay && pressing && !isDragging && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/20 pointer-events-none">
+          <svg className="w-8 h-8 text-white drop-shadow-lg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M8 9l4-4 4 4M8 15l4 4 4-4" />
+          </svg>
+        </div>
+      )}
     </div>
   );
 }
 
-// ── 可排序卡片 ─────────────────────────────────────────────────────
-function SortableCard({
-  work,
-  index,
-  batchMode,
-  isSelected,
-  onToggle,
+// ── 可排序格子 ──────────────────────────────────────────────────────
+function SortableCell({
+  work, index, batchMode, isSelected, onToggle,
 }: {
-  work: Work;
-  index: number;
-  batchMode: boolean;
-  isSelected: boolean;
-  onToggle: (id: string) => void;
+  work: Work; index: number; batchMode: boolean; isSelected: boolean; onToggle: (id: string) => void;
 }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: work.id, disabled: batchMode });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: work.id, disabled: batchMode });
 
   const [pressing, setPressing] = useState(false);
   const pressTimer = useRef<ReturnType<typeof setTimeout>>();
 
-  const style = {
+  const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
-    transition: isDragging ? "none" : transition,
+    transition: isDragging ? "none" : (transition ?? undefined),
+    zIndex: isDragging ? 0 : undefined,
   };
 
-  // 長壓視覺回饋：80ms 後開始放大，等 dnd-kit 的 250ms 延遲啟動拖曳
   const mergedPointerDown = useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
       if (batchMode) return;
-      (listeners as Record<string, (e: unknown) => void>)?.onPointerDown?.(e);
-      pressTimer.current = setTimeout(() => setPressing(true), 80);
+      // Forward to dnd-kit sensor so it starts counting the 180ms delay
+      (listeners as Record<string, (ev: unknown) => void> | undefined)?.onPointerDown?.(e);
+      // Quick visual feedback before drag activates
+      pressTimer.current = setTimeout(() => setPressing(true), 60);
     },
     [batchMode, listeners]
   );
@@ -211,25 +194,18 @@ function SortableCard({
     setPressing(false);
   }, []);
 
-  const pointerHandlers = {
-    onPointerDown: mergedPointerDown,
-    onPointerUp: clearPress,
-    onPointerCancel: clearPress,
-    onPointerLeave: clearPress,
-  };
-
   return (
     <div ref={setNodeRef} style={style}>
-      <CardFace
-        work={work}
-        index={index}
-        batchMode={batchMode}
-        isSelected={isSelected}
-        pressing={pressing}
-        isDragging={isDragging}
-        overlay={false}
-        pointerHandlers={pointerHandlers}
-        dndAttributes={!batchMode ? attributes : {}}
+      <Cell
+        work={work} index={index} batchMode={batchMode} isSelected={isSelected}
+        pressing={pressing} isDragging={isDragging} overlay={false}
+        pointerHandlers={{
+          onPointerDown: mergedPointerDown,
+          onPointerUp: clearPress,
+          onPointerCancel: clearPress,
+          onPointerLeave: clearPress,
+        }}
+        dndAttrs={!batchMode ? attributes : {}}
         onToggle={onToggle}
       />
     </div>
@@ -246,30 +222,27 @@ export default function WorkGrid({ initialWorks }: Props) {
   const [saved, setSaved] = useState(false);
   const [isPending, startTransition] = useTransition();
 
-  // 感應器：滑鼠長壓 250ms / 觸控 200ms 後啟動拖曳，移動超過 5px 以上才算
+  // PointerSensor：統一滑鼠和觸控，長壓 180ms 啟動，5px 容差避免誤觸
   const sensors = useSensors(
-    useSensor(MouseSensor, {
-      activationConstraint: { delay: 250, tolerance: 5 },
+    useSensor(PointerSensor, {
+      activationConstraint: { delay: 180, tolerance: 5 },
     }),
-    useSensor(TouchSensor, {
-      activationConstraint: { delay: 200, tolerance: 8 },
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
     })
   );
 
-  const handleDragStart = ({ active }: DragStartEvent) => {
+  const handleDragStart = ({ active }: DragStartEvent) =>
     setActiveId(String(active.id));
-  };
 
   const handleDragEnd = useCallback(
     ({ active, over }: DragEndEvent) => {
       setActiveId(null);
       if (!over || active.id === over.id) return;
-
-      const oldIndex = works.findIndex((w) => w.id === active.id);
-      const newIndex = works.findIndex((w) => w.id === over.id);
-      const next = arrayMove(works, oldIndex, newIndex);
+      const oldIdx = works.findIndex((w) => w.id === active.id);
+      const newIdx = works.findIndex((w) => w.id === over.id);
+      const next = arrayMove(works, oldIdx, newIdx);
       setWorks(next);
-
       setSaving(true);
       setSaved(false);
       startTransition(async () => {
@@ -284,25 +257,17 @@ export default function WorkGrid({ initialWorks }: Props) {
 
   const handleDragCancel = () => setActiveId(null);
 
-  // ── 批次選取 ──
+  // ── 批次 ──
   const toggleSelect = (id: string) =>
-    setSelected((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
+    setSelected((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
   const selectAll = () => setSelected(new Set(works.map((w) => w.id)));
-  const exitBatchMode = () => { setBatchMode(false); setSelected(new Set()); };
+  const exitBatch = () => { setBatchMode(false); setSelected(new Set()); };
 
   const handleBatchType = (type: WorkType) => {
     const ids = [...selected];
-    setWorks((prev) =>
-      prev.map((w) => (selected.has(w.id) ? { ...w, workType: type } : w))
-    );
+    setWorks((prev) => prev.map((w) => selected.has(w.id) ? { ...w, workType: type } : w));
     setSelected(new Set());
-    startTransition(async () => {
-      await batchSetWorkTypeAction(ids, type);
-    });
+    startTransition(async () => { await batchSetWorkTypeAction(ids, type); });
   };
 
   const hasSelection = selected.size > 0;
@@ -311,63 +276,49 @@ export default function WorkGrid({ initialWorks }: Props) {
   return (
     <div>
       {/* 工具列 */}
-      <div className="mb-3 flex min-h-[40px] items-center gap-3">
+      <div className="mb-3 flex min-h-[36px] items-center gap-3">
         {batchMode ? (
           <>
             {hasSelection ? (
               <>
-                <span className="text-[12px] text-text-secondary">
-                  已選 {selected.size} 件
-                </span>
+                <span className="text-[12px] text-text-secondary">已選 {selected.size} 件</span>
                 <div className="flex items-center gap-2">
                   {(["work", "personal"] as WorkType[]).map((t) => (
-                    <button
-                      key={t}
-                      onClick={() => handleBatchType(t)}
-                      className="rounded-full border-[0.5px] border-warm-border bg-warm-surface px-3 py-1 text-[11px] tracking-[0.04em] text-text-primary transition-colors hover:bg-warm-mid"
-                    >
+                    <button key={t} onClick={() => handleBatchType(t)}
+                      className="rounded-full border-[0.5px] border-warm-border bg-warm-surface px-3 py-1 text-[11px] tracking-[0.04em] text-text-primary hover:bg-warm-mid transition-colors">
                       設為「{TYPE_LABEL[t]}」
                     </button>
                   ))}
                 </div>
               </>
             ) : (
-              <span className="text-[11px] tracking-[0.06em] text-text-muted">
-                點選卡片以選取
-              </span>
+              <span className="text-[11px] text-text-muted tracking-[0.04em]">點選格子以選取</span>
             )}
             <div className="ml-auto flex items-center gap-3">
               {hasSelection && (
-                <button onClick={selectAll} className="text-[11px] text-text-muted hover:text-text-secondary">
-                  全選
-                </button>
+                <button onClick={selectAll} className="text-[11px] text-text-muted hover:text-text-secondary">全選</button>
               )}
-              <button onClick={exitBatchMode} className="text-[11px] text-text-muted hover:text-text-secondary">
-                完成
-              </button>
+              <button onClick={exitBatch} className="text-[11px] text-text-muted hover:text-text-secondary">完成</button>
             </div>
           </>
         ) : (
           <>
             {saving || isPending ? (
-              <span className="text-[11px] tracking-[0.06em] text-text-muted">儲存中…</span>
+              <span className="text-[11px] text-text-muted tracking-[0.04em]">儲存中…</span>
             ) : saved ? (
-              <span className="text-[11px] tracking-[0.06em] text-text-secondary">排序已儲存 ✓</span>
+              <span className="text-[11px] text-text-secondary tracking-[0.04em]">排序已儲存 ✓</span>
             ) : (
-              <span className="text-[11px] tracking-[0.06em] text-text-muted">
-                長壓卡片拖曳調整順序
-              </span>
+              <span className="text-[11px] text-text-muted tracking-[0.04em]">長壓格子拖曳排序</span>
             )}
-            <button
-              onClick={() => setBatchMode(true)}
-              className="ml-auto rounded-full border-[0.5px] border-warm-border bg-warm-surface px-3 py-1 text-[11px] tracking-[0.04em] text-text-secondary transition-colors hover:bg-warm-mid"
-            >
+            <button onClick={() => setBatchMode(true)}
+              className="ml-auto rounded-full border-[0.5px] border-warm-border bg-warm-surface px-3 py-1 text-[11px] tracking-[0.04em] text-text-secondary hover:bg-warm-mid transition-colors">
               批次編輯
             </button>
           </>
         )}
       </div>
 
+      {/* IG 九宮格 */}
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
@@ -376,34 +327,32 @@ export default function WorkGrid({ initialWorks }: Props) {
         onDragCancel={handleDragCancel}
       >
         <SortableContext items={works.map((w) => w.id)} strategy={rectSortingStrategy}>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+          {/* gap 用 bg-warm-border 呈現 IG 格線感 */}
+          <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-[1px] bg-warm-border rounded-sm overflow-hidden">
             {works.map((w, i) => (
-              <SortableCard
-                key={w.id}
-                work={w}
-                index={i}
-                batchMode={batchMode}
-                isSelected={selected.has(w.id)}
+              <SortableCell
+                key={w.id} work={w} index={i}
+                batchMode={batchMode} isSelected={selected.has(w.id)}
                 onToggle={toggleSelect}
               />
             ))}
           </div>
         </SortableContext>
 
-        {/* 拖曳中浮動卡片（跟隨滑鼠移動） */}
-        <DragOverlay dropAnimation={{ duration: 180, easing: "cubic-bezier(0.18,0.67,0.6,1.22)" }}>
+        {/* 拖曳浮動卡片 */}
+        <DragOverlay
+          dropAnimation={{
+            duration: 220,
+            easing: "cubic-bezier(0.2, 0, 0, 1.3)",
+          }}
+        >
           {activeWork ? (
-            <CardFace
+            <Cell
               work={activeWork}
               index={works.findIndex((w) => w.id === activeWork.id)}
-              batchMode={false}
-              isSelected={false}
-              pressing={false}
-              isDragging={false}
-              overlay
-              pointerHandlers={{}}
-              dndAttributes={{}}
-              onToggle={() => {}}
+              batchMode={false} isSelected={false}
+              pressing={false} isDragging={false} overlay
+              pointerHandlers={{}} dndAttrs={{}} onToggle={() => {}}
             />
           ) : null}
         </DragOverlay>
