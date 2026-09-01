@@ -14,6 +14,7 @@ import {
   type DragEndEvent,
   type DragStartEvent,
   type CollisionDetection,
+  type DraggableAttributes,
 } from "@dnd-kit/core";
 import { snapCenterToCursor } from "@dnd-kit/modifiers";
 import {
@@ -46,7 +47,7 @@ interface CellProps {
   isDragging: boolean;
   overlay: boolean;
   pointerHandlers: Record<string, unknown>;
-  dndAttrs: Record<string, unknown>;
+  dndAttrs: DraggableAttributes | Record<string, never>;
   onToggle: (id: string) => void;
 }
 
