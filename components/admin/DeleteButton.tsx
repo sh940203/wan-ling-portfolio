@@ -6,6 +6,7 @@ export default function DeleteButton({ id, small }: { id: string; small?: boolea
   return (
     <form
       action={deleteWorkAction}
+      className={small ? "flex flex-1" : undefined}
       onSubmit={(e) => {
         if (!confirm("確定要刪除這件作品嗎？此動作無法復原。")) {
           e.preventDefault();
@@ -15,10 +16,11 @@ export default function DeleteButton({ id, small }: { id: string; small?: boolea
       <input type="hidden" name="id" value={id} />
       <button
         type="submit"
+        onPointerDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
         className={
           small
-            ? "text-white/70 text-[8px] uppercase tracking-[0.08em] border border-white/30 rounded px-1.5 py-0.5 hover:bg-red-500/60 transition-colors"
+            ? "inline-flex h-10 w-full items-center justify-center rounded-md bg-red-600 text-[11px] font-semibold uppercase tracking-[0.1em] text-white shadow-sm transition active:scale-95 hover:bg-red-700 md:h-9"
             : "text-[11px] uppercase tracking-[0.1em] text-text-muted transition-colors hover:text-[#B4543C]"
         }
       >

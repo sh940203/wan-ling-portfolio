@@ -93,30 +93,37 @@ function Cell({
         </div>
       )}
 
-      {/* 一般模式 hover 覆蓋層 */}
+      {/* 一般模式操作層：觸控裝置常駐、桌機 hover 顯示；按鈕放大到好按的尺寸 */}
       {!batchMode && !overlay && (
-        <div className="absolute inset-0 bg-black/55 opacity-0 group-hover:opacity-100 transition-opacity duration-150 flex flex-col justify-between p-2">
-          {/* 上方：featured star + 歸屬 */}
-          <div className="flex items-start justify-between">
-            {work.featured ? (
-              <span className="text-amber-300 text-[10px]">★</span>
-            ) : <span />}
+        <div className="absolute inset-0 flex flex-col justify-between p-1.5 md:bg-black/45 md:opacity-0 md:transition-opacity md:duration-150 md:group-hover:opacity-100">
+          {/* 手機用底部漸層增加對比（桌機 hover 時整片變暗，不需要） */}
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/85 via-black/30 to-transparent md:hidden" />
+
+          {/* 上方：featured / 歸屬 標記（常駐，一眼看狀態） */}
+          <div className="relative flex items-start justify-end gap-1">
+            {work.featured && (
+              <span className="text-amber-300 text-[13px] leading-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+                ★
+              </span>
+            )}
             {work.workType === "personal" && (
-              <span className="text-white/80 text-[8px] tracking-[0.08em] uppercase border border-white/40 rounded px-1 py-0.5">
+              <span className="rounded bg-black/55 px-1.5 py-0.5 text-[9px] uppercase tracking-[0.06em] text-white backdrop-blur-sm">
                 個人
               </span>
             )}
           </div>
-          {/* 下方：標題 + 操作 */}
-          <div className="flex flex-col gap-1.5">
-            <p className="text-white text-[9px] leading-[1.3] line-clamp-2 opacity-90">
+
+          {/* 下方：標題 + 操作按鈕 */}
+          <div className="relative flex flex-col gap-1.5">
+            <p className="line-clamp-1 text-[11px] leading-tight text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
               {work.titleEn || work.title}
             </p>
-            <div className="flex items-center gap-2">
+            <div className="flex items-stretch gap-1.5">
               <Link
                 href={`/admin/works/${work.id}/edit`}
+                onPointerDown={(e) => e.stopPropagation()}
                 onClick={(e) => e.stopPropagation()}
-                className="text-white/90 text-[8px] uppercase tracking-[0.08em] border border-white/40 rounded px-1.5 py-0.5 hover:bg-white/20 transition-colors"
+                className="inline-flex h-10 flex-1 items-center justify-center rounded-md bg-white text-[11px] font-semibold uppercase tracking-[0.1em] text-[#3a2e24] shadow-sm transition active:scale-95 hover:bg-white/90 md:h-9"
               >
                 Edit
               </Link>
@@ -340,7 +347,7 @@ export default function WorkGrid({ initialWorks }: Props) {
       >
         <SortableContext items={works.map((w) => w.id)} strategy={rectSortingStrategy}>
           {/* gap 用 bg-warm-border 呈現 IG 格線感 */}
-          <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-[1px] bg-warm-border rounded-sm overflow-hidden">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-[1px] bg-warm-border rounded-sm overflow-hidden">
             {works.map((w, i) => (
               <SortableCell
                 key={w.id} work={w} index={i}
