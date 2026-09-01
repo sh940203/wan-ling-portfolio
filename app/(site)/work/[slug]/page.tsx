@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import Reveal from "@/components/Reveal";
 import { getAllWorks, getWorkBySlug } from "@/lib/works";
-import { getEmbedUrl } from "@/lib/video";
+import { getEmbedUrl, getProvider } from "@/lib/video";
 import { coverUrl } from "@/lib/cover";
 
 export const revalidate = 60;
@@ -37,6 +37,7 @@ export default async function WorkDetail({
   const work = await getWorkBySlug(params.slug);
   if (!work) notFound();
 
+  const provider = getProvider(work.videoUrl);
   const embed = getEmbedUrl(work.videoUrl);
   const isVertical = work.orientation === "vertical";
   const cover = coverUrl(work);
@@ -76,13 +77,40 @@ export default async function WorkDetail({
         </header>
       </Reveal>
 
-      {/* 影片：Instagram Reel（直式）或 Vimeo（橫式） */}
+      {/* 影片：Instagram Reel（直式）用封面 + 播放鍵連到 IG；Vimeo（橫式）內嵌播放器 */}
       <Reveal>
         <div className={isVertical ? "mx-auto w-full max-w-[400px]" : "w-full"}>
-          {embed ? (
+          {provider === "instagram" && work.videoUrl ? (
+            // Instagram 的 iframe embed 會夾帶頁首/頁尾與黑邊，直式 Reel 內嵌一定破版，
+            // 改成乾淨的 9:16 封面 + 播放鍵，點擊到 Instagram 看原片。
+            <a
+              href={work.videoUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`在 Instagram 觀看：${work.titleEn || work.title}`}
+              className={`group relative block w-full overflow-hidden rounded-lg border-[0.5px] border-warm-border bg-warm-deep ${
+                isVertical ? "aspect-[9/16]" : "aspect-video"
+              }`}
+            >
+              {cover && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={cover}
+                  alt={work.titleEn || work.title}
+                  className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 ease-soft group-hover:scale-[1.03]"
+                />
+              )}
+              <span className="absolute inset-0 bg-warm-deep/10 transition-colors group-hover:bg-warm-deep/0" />
+              <span className="absolute left-1/2 top-1/2 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-on-dark/85 backdrop-blur-sm transition-transform duration-200 ease-soft group-hover:scale-110">
+                <svg width="20" height="24" viewBox="0 0 20 24" fill="none" aria-hidden>
+                  <path d="M0 1L20 12L0 23V1Z" fill="#5C4A3A" />
+                </svg>
+              </span>
+            </a>
+          ) : embed ? (
             <div
               className="relative w-full overflow-hidden rounded-lg border-[0.5px] border-warm-border bg-warm-deep"
-              style={{ aspectRatio: isVertical ? "400 / 690" : "16 / 9" }}
+              style={{ aspectRatio: isVertical ? "9 / 16" : "16 / 9" }}
             >
               <iframe
                 src={embed}
@@ -108,7 +136,7 @@ export default async function WorkDetail({
           )}
         </div>
 
-        {/* 在 Instagram 觀看原片 */}
+        {/* 觀看原片連結 */}
         {work.videoUrl && (
           <div className="mt-4 text-center">
             <a
@@ -117,7 +145,11 @@ export default async function WorkDetail({
               rel="noopener noreferrer"
               className="text-[11px] uppercase tracking-[0.12em] text-text-secondary transition-colors hover:text-text-primary"
             >
-              View on Instagram ↗
+              {provider === "instagram"
+                ? "View on Instagram ↗"
+                : provider === "vimeo"
+                ? "View on Vimeo ↗"
+                : "View original ↗"}
             </a>
           </div>
         )}
