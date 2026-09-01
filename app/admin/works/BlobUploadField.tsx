@@ -15,8 +15,13 @@ const CONF: Record<
   { accept: string; maxMB: number; clientPayload: string; folder: string }
 > = {
   image: { accept: "image/*", maxMB: 12, clientPayload: "image", folder: "covers" },
-  video: { accept: "video/*", maxMB: 300, clientPayload: "video", folder: "works" },
+  // 影片實務上不設限，只擋明顯異常的超大檔；multipart 會分塊處理
+  video: { accept: "video/*", maxMB: 5120, clientPayload: "video", folder: "works" },
 };
+
+const UPLOAD_URL = "/api/admin/upload";
+const MB = 1024 * 1024;
+const fmtMB = (b: number) => (b / MB).toFixed(b < 10 * MB ? 1 : 0);
 
 export default function BlobUploadField({
   name,
@@ -35,10 +40,25 @@ export default function BlobUploadField({
 }) {
   const conf = CONF[kind];
   const [url, setUrl] = useState(defaultValue);
-  const [status, setStatus] = useState<"idle" | "uploading" | "error">("idle");
-  const [pct, setPct] = useState(0);
+  const [status, setStatus] = useState<
+    "idle" | "preparing" | "uploading" | "error"
+  >("idle");
+  const [prog, setProg] = useState({ loaded: 0, total: 0, mbps: 0, eta: 0 });
   const [error, setError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
+  const tick = useRef({ t0: 0, lastAt: 0 });
+
+  // 打開檔案選擇器的同時預熱 token 端點：使用者在選片 / iOS 準備檔案那幾秒，
+  // 這支 serverless function 已經被叫醒，等真正要 token 時就不用等冷啟動。
+  function warm() {
+    fetch(UPLOAD_URL, { method: "GET", cache: "no-store" }).catch(() => {});
+  }
+
+  function openPicker() {
+    warm();
+    fileRef.current?.click();
+  }
 
   async function onPick(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -51,32 +71,58 @@ export default function BlobUploadField({
       setError(kind === "image" ? "請選擇圖片檔" : "請選擇影片檔");
       return;
     }
-    if (file.size > conf.maxMB * 1024 * 1024) {
+    if (file.size > conf.maxMB * MB) {
       setStatus("error");
-      setError(`檔案太大（上限 ${conf.maxMB}MB）`);
+      setError(`檔案太大（上限 ${conf.maxMB >= 1024 ? conf.maxMB / 1024 + "GB" : conf.maxMB + "MB"}）`);
       return;
     }
 
-    setStatus("uploading");
-    setPct(0);
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
+    tick.current = { t0: Date.now(), lastAt: 0 };
+    setStatus("preparing");
+    setProg({ loaded: 0, total: file.size, mbps: 0, eta: 0 });
     setError(null);
+
     try {
       const ext = file.name.split(".").pop()?.toLowerCase() || "bin";
       const result = await upload(`${conf.folder}/${Date.now()}.${ext}`, file, {
         access: "public",
-        handleUploadUrl: "/api/admin/upload",
+        handleUploadUrl: UPLOAD_URL,
         clientPayload: conf.clientPayload,
         contentType: file.type,
-        multipart: file.size > 20 * 1024 * 1024,
-        onUploadProgress: (p) => setPct(Math.round(p.percentage)),
+        // 大檔用 multipart：分塊並行上傳，也能中途重試
+        multipart: file.size > 15 * MB,
+        abortSignal: ctrl.signal,
+        onUploadProgress: (p) => {
+          const now = Date.now();
+          // 節流：最多每 250ms 更新一次畫面
+          if (now - tick.current.lastAt < 250 && p.loaded < p.total) return;
+          tick.current.lastAt = now;
+          const secs = (now - tick.current.t0) / 1000;
+          const mbps = secs > 0 ? p.loaded / MB / secs : 0;
+          const eta = mbps > 0 ? (p.total - p.loaded) / MB / mbps : 0;
+          setStatus("uploading");
+          setProg({ loaded: p.loaded, total: p.total, mbps, eta });
+        },
       });
       setUrl(result.url);
       setStatus("idle");
     } catch (err) {
+      if (ctrl.signal.aborted) {
+        setStatus("idle");
+        return;
+      }
       setStatus("error");
       setError(err instanceof Error ? err.message : "上傳失敗，請重試");
+    } finally {
+      abortRef.current = null;
     }
   }
+
+  const busy = status === "preparing" || status === "uploading";
+  const pctNum =
+    prog.total > 0 ? Math.min(100, Math.round((prog.loaded / prog.total) * 100)) : 0;
 
   return (
     <div>
@@ -121,15 +167,28 @@ export default function BlobUploadField({
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
-              onClick={() => fileRef.current?.click()}
-              disabled={status === "uploading"}
+              onClick={openPicker}
+              disabled={busy}
               className="h-9 rounded-full border-[0.5px] border-warm-border bg-warm-surface px-4 text-[12px] tracking-[0.03em] text-text-body transition-colors hover:border-text-muted disabled:opacity-50"
             >
-              {status === "uploading"
-                ? `上傳中… ${pct}%`
+              {status === "preparing"
+                ? "準備中…"
+                : status === "uploading"
+                ? `上傳中 ${pctNum}%`
                 : buttonLabel ?? "從相簿／檔案上傳"}
             </button>
-            {url && status !== "uploading" && (
+
+            {busy && (
+              <button
+                type="button"
+                onClick={() => abortRef.current?.abort()}
+                className="h-9 px-2 text-[12px] text-text-muted transition-colors hover:text-text-primary"
+              >
+                取消
+              </button>
+            )}
+
+            {url && !busy && (
               <button
                 type="button"
                 onClick={() => {
@@ -144,16 +203,35 @@ export default function BlobUploadField({
             )}
           </div>
 
+          {/* 進度列 */}
+          {busy && (
+            <div className="space-y-1">
+              <div className="h-1 w-full overflow-hidden rounded-full bg-warm-mid">
+                <div
+                  className="h-full rounded-full bg-text-primary transition-[width] duration-200"
+                  style={{ width: `${status === "preparing" ? 3 : pctNum}%` }}
+                />
+              </div>
+              <p className="text-[11px] text-text-muted">
+                {status === "preparing"
+                  ? "連線中…（檔案不會經過伺服器，直接傳到儲存空間）"
+                  : `已傳 ${fmtMB(prog.loaded)} / ${fmtMB(prog.total)} MB` +
+                    (prog.mbps > 0 ? ` · ${prog.mbps.toFixed(1)} MB/s` : "") +
+                    (prog.eta > 1 ? ` · 剩約 ${Math.ceil(prog.eta)} 秒` : "")}
+              </p>
+            </div>
+          )}
+
           {status === "error" && error ? (
             <p className="text-[11px] text-red-600">{error}</p>
-          ) : (
+          ) : !busy ? (
             <p className="text-[11px] text-text-muted">
               {hint ??
                 (kind === "image"
                   ? "手機可直接選相簿照片或拍照；留空時 Instagram 作品會自動抓縮圖。"
-                  : `手機可直接選相簿影片；上傳後官網會用內建播放器直接播（上限 ${conf.maxMB}MB）。`)}
+                  : "手機建議先把影片存到「檔案」App 再從那裡選（照片 App 會先花時間轉檔）。")}
             </p>
-          )}
+          ) : null}
         </div>
       </div>
 

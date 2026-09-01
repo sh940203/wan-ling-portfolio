@@ -22,8 +22,14 @@ const VIDEO_TYPES = [
   "video/quicktime", // .mov（iPhone 原生）
   "video/webm",
 ];
-const IMAGE_MAX = 12 * 1024 * 1024; //  12MB
-const VIDEO_MAX = 300 * 1024 * 1024; // 300MB
+const IMAGE_MAX = 12 * 1024 * 1024; //   12MB
+const VIDEO_MAX = 5 * 1024 * 1024 * 1024; // 5GB（實務上不設限；multipart 會處理大檔）
+
+// 前端在打開檔案選擇器時會先打這支，把 function 預熱，
+// 等真正要 token 的 POST 進來時就不會遇到 serverless 冷啟動（省下第一段等待）。
+export async function GET(): Promise<NextResponse> {
+  return NextResponse.json({ ok: true });
+}
 
 export async function POST(request: Request): Promise<NextResponse> {
   // 先擋未登入者，再看設定，避免對匿名訪客洩漏環境狀態
