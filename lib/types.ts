@@ -38,6 +38,8 @@ export interface Work {
   year: number | null;
   /** 影片連結：Instagram Reel 或 Vimeo（Notion: video_url / vimeo_url） */
   videoUrl: string | null;
+  /** 上傳到 Vercel Blob 的影片檔 URL；有值時官網直接用 <video> 播放 */
+  videoFile: string | null;
   /** 直式 / 橫式，決定卡片與播放器比例 */
   orientation: Orientation;
   /** 封面圖 URL（Notion: cover_image 的第一個檔案）；Instagram 可留空用 embed */

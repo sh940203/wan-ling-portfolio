@@ -22,6 +22,7 @@ function rowToWork(r: any): Work {
     workType: (r.work_type === "personal" ? "personal" : "work") as WorkType,
     year: r.year == null ? null : Number(r.year),
     videoUrl: r.video_url ?? null,
+    videoFile: r.video_file ?? null,
     orientation: (r.orientation === "horizontal" ? "horizontal" : "vertical") as Orientation,
     coverImage: r.cover_image ?? null,
     description: String(r.description ?? ""),
@@ -78,6 +79,7 @@ export type WorkInput = {
   workType: WorkType;
   year: number | null;
   videoUrl: string | null;
+  videoFile: string | null;
   orientation?: Orientation;
   coverImage: string | null;
   description: string;
@@ -115,8 +117,8 @@ export async function createWork(input: WorkInput): Promise<string> {
   const orientation = input.orientation ?? defaultOrientation(input.videoUrl);
   await db.execute({
     sql: `INSERT INTO works
-      (id, slug, title, title_en, category, work_type, year, video_url, orientation, cover_image, description, featured, "order")
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      (id, slug, title, title_en, category, work_type, year, video_url, video_file, orientation, cover_image, description, featured, "order")
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     args: [
       id,
       slug,
@@ -126,6 +128,7 @@ export async function createWork(input: WorkInput): Promise<string> {
       input.workType,
       input.year,
       input.videoUrl,
+      input.videoFile,
       orientation,
       input.coverImage,
       input.description,
@@ -143,7 +146,7 @@ export async function updateWork(id: string, input: WorkInput): Promise<void> {
   const orientation = input.orientation ?? defaultOrientation(input.videoUrl);
   await db.execute({
     sql: `UPDATE works SET
-      slug=?, title=?, title_en=?, category=?, work_type=?, year=?, video_url=?, orientation=?, cover_image=?, description=?, featured=?, "order"=?
+      slug=?, title=?, title_en=?, category=?, work_type=?, year=?, video_url=?, video_file=?, orientation=?, cover_image=?, description=?, featured=?, "order"=?
       WHERE id=?`,
     args: [
       slug,
@@ -153,6 +156,7 @@ export async function updateWork(id: string, input: WorkInput): Promise<void> {
       input.workType,
       input.year,
       input.videoUrl,
+      input.videoFile,
       orientation,
       input.coverImage,
       input.description,

@@ -48,6 +48,7 @@ export const sampleWorks: Work[] = reels.map((r, i) => ({
   workType: r.workType ?? "work",
   year: null,
   videoUrl: `https://www.instagram.com/reel/${r.code}/`,
+  videoFile: null,
   orientation: "vertical",
   coverImage: r.cover ?? null,
   description:

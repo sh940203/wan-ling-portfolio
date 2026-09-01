@@ -77,10 +77,26 @@ export default async function WorkDetail({
         </header>
       </Reveal>
 
-      {/* 影片：Instagram Reel（直式）用封面 + 播放鍵連到 IG；Vimeo（橫式）內嵌播放器 */}
+      {/* 影片播放優先序：上傳的影片檔 > Vimeo 內嵌 > Instagram 封面連外 > 封面圖 */}
       <Reveal>
         <div className={isVertical ? "mx-auto w-full max-w-[400px]" : "w-full"}>
-          {provider === "instagram" && work.videoUrl ? (
+          {work.videoFile ? (
+            <div
+              className="relative w-full overflow-hidden rounded-lg border-[0.5px] border-warm-border bg-warm-deep"
+              style={{ aspectRatio: isVertical ? "9 / 16" : "16 / 9" }}
+            >
+              <video
+                src={work.videoFile}
+                poster={cover ?? undefined}
+                controls
+                playsInline
+                preload="metadata"
+                className="absolute inset-0 h-full w-full object-contain"
+              >
+                {work.titleEn || work.title}
+              </video>
+            </div>
+          ) : provider === "instagram" && work.videoUrl ? (
             // Instagram 的 iframe embed 會夾帶頁首/頁尾與黑邊，直式 Reel 內嵌一定破版，
             // 改成乾淨的 9:16 封面 + 播放鍵，點擊到 Instagram 看原片。
             <a

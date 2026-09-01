@@ -84,6 +84,7 @@ function parseWorkInput(fd: FormData): WorkInput {
     workType,
     year: yearRaw ? Number(yearRaw) : null,
     videoUrl: str(fd, "videoUrl") || null,
+    videoFile: str(fd, "videoFile") || null,
     orientation:
       orientationRaw === "vertical" || orientationRaw === "horizontal"
         ? (orientationRaw as Orientation)

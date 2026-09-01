@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { saveWorkAction } from "../actions";
-import CoverImageField from "./CoverImageField";
+import BlobUploadField from "./BlobUploadField";
 import type { Work } from "@/lib/types";
 
 const inputCls =
@@ -63,6 +63,15 @@ export default function WorkForm({ work }: { work?: Work }) {
         />
       </Field>
 
+      <BlobUploadField
+        name="videoFile"
+        label="影片檔 Video file（建議上傳，官網可直接播）"
+        kind="video"
+        defaultValue={work?.videoFile ?? ""}
+        buttonLabel="從相簿／檔案上傳影片"
+        hint="上傳 mp4／mov 後，官網用內建播放器直接播放，不再依賴 Instagram 內嵌（部分手機/電腦會播不出來）。留空則沿用上面的連結。"
+      />
+
       <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-5">
         <Field label="歸屬 Type">
           <select
@@ -116,7 +125,12 @@ export default function WorkForm({ work }: { work?: Work }) {
         </Field>
       </div>
 
-      <CoverImageField defaultValue={work?.coverImage ?? ""} />
+      <BlobUploadField
+        name="coverImage"
+        label="封面圖 Cover（可留空）"
+        kind="image"
+        defaultValue={work?.coverImage ?? ""}
+      />
 
       <Field label="說明 Description" hint="中英各一段，中間用換行分隔">
         <textarea

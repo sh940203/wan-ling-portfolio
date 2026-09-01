@@ -68,6 +68,12 @@ async function ensureSchema(c: Client) {
   } catch {
     // 欄位已存在，略過
   }
+  try {
+    // 上傳到 Vercel Blob 的影片檔 URL（有值就用 <video> 內嵌播放，不靠 IG embed）
+    await c.execute(`ALTER TABLE works ADD COLUMN video_file TEXT`);
+  } catch {
+    // 欄位已存在，略過
+  }
 }
 
 async function seedIfEmpty(c: Client) {

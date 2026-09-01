@@ -2,21 +2,28 @@ import { NextResponse } from "next/server";
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { isAuthed } from "@/lib/auth";
 
-// 作品封面圖上傳：走 Vercel Blob「client upload」──
+// 作品封面圖 / 影片檔上傳：走 Vercel Blob「client upload」──
 // 檔案由瀏覽器直接傳到 Blob，不經過 serverless function，
-// 避開 Vercel 4.5MB request body 上限（手機拍的照片常常超過）。
+// 避開 Vercel 4.5MB request body 上限（手機拍的照片/影片都會超過）。
 // 這支端點只負責：驗證是後台登入者 → 發一次性上傳 token。
+// 前端用 clientPayload 傳 "image" 或 "video" 來決定允許的型別與大小上限。
 
 export const runtime = "nodejs";
 
-const ALLOWED = [
+const IMAGE_TYPES = [
   "image/jpeg",
   "image/png",
   "image/webp",
   "image/gif",
   "image/avif",
 ];
-const MAX_BYTES = 12 * 1024 * 1024; // 12MB
+const VIDEO_TYPES = [
+  "video/mp4",
+  "video/quicktime", // .mov（iPhone 原生）
+  "video/webm",
+];
+const IMAGE_MAX = 12 * 1024 * 1024; //  12MB
+const VIDEO_MAX = 300 * 1024 * 1024; // 300MB
 
 export async function POST(request: Request): Promise<NextResponse> {
   // 先擋未登入者，再看設定，避免對匿名訪客洩漏環境狀態
@@ -36,14 +43,15 @@ export async function POST(request: Request): Promise<NextResponse> {
     const result = await handleUpload({
       body,
       request,
-      onBeforeGenerateToken: async () => {
+      onBeforeGenerateToken: async (_pathname, clientPayload) => {
         // handleUpload 內部再驗一次，雙保險
         if (!(await isAuthed())) {
           throw new Error("未登入");
         }
+        const isVideo = clientPayload === "video";
         return {
-          allowedContentTypes: ALLOWED,
-          maximumSizeInBytes: MAX_BYTES,
+          allowedContentTypes: isVideo ? VIDEO_TYPES : IMAGE_TYPES,
+          maximumSizeInBytes: isVideo ? VIDEO_MAX : IMAGE_MAX,
           addRandomSuffix: true,
         };
       },
