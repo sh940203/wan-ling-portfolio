@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   DndContext,
   closestCenter,
+  pointerWithin,
   PointerSensor,
   KeyboardSensor,
   useSensor,
@@ -12,7 +13,9 @@ import {
   DragOverlay,
   type DragEndEvent,
   type DragStartEvent,
+  type CollisionDetection,
 } from "@dnd-kit/core";
+import { snapCenterToCursor } from "@dnd-kit/modifiers";
 import {
   SortableContext,
   useSortable,
@@ -232,6 +235,14 @@ export default function WorkGrid({ initialWorks }: Props) {
     })
   );
 
+  // 自訂碰撞偵測：優先用游標位置（pointerWithin）→ 最近中心 fallback
+  // 解決跨列拖曳「插不進去」問題：游標在哪格就插到哪格，不依賴 overlay 中心距離
+  const collisionDetection: CollisionDetection = useCallback((args) => {
+    const byPointer = pointerWithin(args);
+    if (byPointer.length > 0) return byPointer;
+    return closestCenter(args);
+  }, []);
+
   const handleDragStart = ({ active }: DragStartEvent) =>
     setActiveId(String(active.id));
 
@@ -321,7 +332,7 @@ export default function WorkGrid({ initialWorks }: Props) {
       {/* IG 九宮格 */}
       <DndContext
         sensors={sensors}
-        collisionDetection={closestCenter}
+        collisionDetection={collisionDetection}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
         onDragCancel={handleDragCancel}
@@ -340,10 +351,13 @@ export default function WorkGrid({ initialWorks }: Props) {
         </SortableContext>
 
         {/* 拖曳浮動卡片 */}
+        {/* snapCenterToCursor：delay 啟動後強制 overlay 貼齊游標中心
+            → 解決 delay 期間移動導致 overlay 位置偏移、放開時跳到錯誤位置的問題 */}
         <DragOverlay
+          modifiers={[snapCenterToCursor]}
           dropAnimation={{
-            duration: 220,
-            easing: "cubic-bezier(0.2, 0, 0, 1.3)",
+            duration: 200,
+            easing: "cubic-bezier(0.2, 0, 0, 1.2)",
           }}
         >
           {activeWork ? (
