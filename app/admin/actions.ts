@@ -16,6 +16,7 @@ import {
   updateWorkTitle,
   reorderWorks,
   batchSetWorkType,
+  setFeatured,
   type WorkInput,
 } from "@/lib/works";
 import { getSettings, saveSettings } from "@/lib/settings";
@@ -196,6 +197,16 @@ export async function batchSetWorkTypeAction(
   if (!Array.isArray(ids) || ids.length === 0) return { ok: false };
   if (!WORK_TYPES.includes(workType)) return { ok: false };
   await batchSetWorkType(ids, workType);
+  return { ok: true };
+}
+
+export async function toggleFeaturedAction(
+  id: string,
+  featured: boolean
+): Promise<{ ok: boolean }> {
+  await requireAuth();
+  if (!id) return { ok: false };
+  await setFeatured(id, Boolean(featured));
   return { ok: true };
 }
 

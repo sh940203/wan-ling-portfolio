@@ -25,7 +25,7 @@ import {
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { reorderWorksAction, batchSetWorkTypeAction } from "@/app/admin/actions";
+import { reorderWorksAction, batchSetWorkTypeAction, toggleFeaturedAction } from "@/app/admin/actions";
 import DeleteButton from "@/components/admin/DeleteButton";
 import type { Work, WorkType } from "@/lib/types";
 import { coverUrl } from "@/lib/cover";
@@ -49,11 +49,12 @@ interface CellProps {
   pointerHandlers: Record<string, unknown>;
   dndAttrs: DraggableAttributes | Record<string, never>;
   onToggle: (id: string) => void;
+  onToggleFeatured: (id: string) => void;
 }
 
 function Cell({
   work, index, batchMode, isSelected, pressing, isDragging,
-  overlay, pointerHandlers, dndAttrs, onToggle,
+  overlay, pointerHandlers, dndAttrs, onToggle, onToggleFeatured,
 }: CellProps) {
   const cover = coverUrl(work);
 
@@ -99,13 +100,22 @@ function Cell({
           {/* 手機用底部漸層增加對比（桌機 hover 時整片變暗，不需要） */}
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/85 via-black/30 to-transparent md:hidden" />
 
-          {/* 上方：featured / 歸屬 標記（常駐，一眼看狀態） */}
+          {/* 上方：featured 星星（可直接點切換，不用進 Edit）+ 歸屬標記 */}
           <div className="relative flex items-start justify-end gap-1">
-            {work.featured && (
-              <span className="text-amber-300 text-[13px] leading-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
-                ★
-              </span>
-            )}
+            <button
+              type="button"
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleFeatured(work.id);
+              }}
+              aria-pressed={work.featured}
+              aria-label={work.featured ? "取消首頁精選" : "設為首頁精選"}
+              title={work.featured ? "取消首頁精選" : "設為首頁精選"}
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-[15px] leading-none backdrop-blur-sm transition active:scale-90 hover:bg-black/60"
+            >
+              <span className={work.featured ? "text-amber-300" : "text-white/60"}>★</span>
+            </button>
             {work.workType === "personal" && (
               <span className="rounded bg-black/55 px-1.5 py-0.5 text-[9px] uppercase tracking-[0.06em] text-white backdrop-blur-sm">
                 個人
@@ -173,9 +183,10 @@ function Cell({
 
 // ── 可排序格子 ──────────────────────────────────────────────────────
 function SortableCell({
-  work, index, batchMode, isSelected, onToggle,
+  work, index, batchMode, isSelected, onToggle, onToggleFeatured,
 }: {
-  work: Work; index: number; batchMode: boolean; isSelected: boolean; onToggle: (id: string) => void;
+  work: Work; index: number; batchMode: boolean; isSelected: boolean;
+  onToggle: (id: string) => void; onToggleFeatured: (id: string) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: work.id, disabled: batchMode });
@@ -218,6 +229,7 @@ function SortableCell({
         }}
         dndAttrs={!batchMode ? attributes : {}}
         onToggle={onToggle}
+        onToggleFeatured={onToggleFeatured}
       />
     </div>
   );
@@ -289,6 +301,22 @@ export default function WorkGrid({ initialWorks }: Props) {
     startTransition(async () => { await batchSetWorkTypeAction(ids, type); });
   };
 
+  // ── 首頁精選：直接在格子上點星星切換，不用進 Edit ──
+  const handleToggleFeatured = useCallback((id: string) => {
+    const next = !works.find((w) => w.id === id)?.featured;
+    setWorks((prev) => prev.map((w) => (w.id === id ? { ...w, featured: next } : w)));
+    startTransition(async () => {
+      try {
+        const res = await toggleFeaturedAction(id, next);
+        if (!res.ok) throw new Error("toggleFeaturedAction failed");
+      } catch {
+        // 失敗（含未登入被導去 /admin/login 拋出的 redirect）就退回原狀態，
+        // 不讓畫面顯示跟資料庫不一致的星星
+        setWorks((prev) => prev.map((w) => (w.id === id ? { ...w, featured: !next } : w)));
+      }
+    });
+  }, [works]);
+
   const hasSelection = selected.size > 0;
   const activeWork = activeId ? works.find((w) => w.id === activeId) ?? null : null;
 
@@ -353,6 +381,7 @@ export default function WorkGrid({ initialWorks }: Props) {
                 key={w.id} work={w} index={i}
                 batchMode={batchMode} isSelected={selected.has(w.id)}
                 onToggle={toggleSelect}
+                onToggleFeatured={handleToggleFeatured}
               />
             ))}
           </div>
@@ -374,7 +403,7 @@ export default function WorkGrid({ initialWorks }: Props) {
               index={works.findIndex((w) => w.id === activeWork.id)}
               batchMode={false} isSelected={false}
               pressing={false} isDragging={false} overlay
-              pointerHandlers={{}} dndAttrs={{}} onToggle={() => {}}
+              pointerHandlers={{}} dndAttrs={{}} onToggle={() => {}} onToggleFeatured={() => {}}
             />
           ) : null}
         </DragOverlay>

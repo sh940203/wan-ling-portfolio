@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import { saveWorkAction } from "../actions";
 import BlobUploadField from "./BlobUploadField";
@@ -28,6 +31,8 @@ function Field({
 
 export default function WorkForm({ work }: { work?: Work }) {
   const isEdit = Boolean(work);
+  // 封面狀態拉到這層：影片上傳完成後自動擷取的畫面，可以直接寫進封面欄位
+  const [cover, setCover] = useState(work?.coverImage ?? "");
   return (
     <form action={saveWorkAction} className="space-y-5">
       {work && <input type="hidden" name="id" value={work.id} />}
@@ -69,7 +74,8 @@ export default function WorkForm({ work }: { work?: Work }) {
         kind="video"
         defaultValue={work?.videoFile ?? ""}
         buttonLabel="從相簿／檔案上傳影片"
-        hint="上傳 mp4／mov 後，官網用內建播放器直接播放，不再依賴 Instagram 內嵌（部分手機/電腦會播不出來）。留空則沿用上面的連結。"
+        hint="上傳 mp4／mov 後，官網用內建播放器直接播放，不再依賴 Instagram 內嵌（部分手機/電腦會播不出來）。留空則沿用上面的連結。上傳後會自動擷取一張畫面當封面（下面欄位還沒填的話）。"
+        onPosterReady={(u) => setCover((c) => c || u)}
       />
 
       <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-5">
@@ -129,7 +135,8 @@ export default function WorkForm({ work }: { work?: Work }) {
         name="coverImage"
         label="封面圖 Cover（可留空）"
         kind="image"
-        defaultValue={work?.coverImage ?? ""}
+        value={cover}
+        onValueChange={setCover}
       />
 
       <Field label="說明 Description" hint="中英各一段，中間用換行分隔">

@@ -203,6 +203,16 @@ export async function batchSetWorkType(
   revalidatePublic();
 }
 
+// 切換單一作品的首頁精選狀態（admin grid 直接點星星用，不用進 Edit 表單）
+export async function setFeatured(id: string, featured: boolean): Promise<void> {
+  const db = await getDb();
+  await db.execute({
+    sql: `UPDATE works SET featured = ? WHERE id = ?`,
+    args: [featured ? 1 : 0, id],
+  });
+  revalidatePublic();
+}
+
 // 批次更新排序：傳入 [{id, order}] 陣列，在單一 transaction 內完成
 export async function reorderWorks(
   items: { id: string; order: number }[]

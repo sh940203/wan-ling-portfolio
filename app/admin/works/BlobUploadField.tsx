@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { upload } from "@vercel/blob/client";
+import { captureVideoPoster } from "@/lib/video-poster";
 
 const inputCls =
   "w-full rounded-md border-[0.5px] border-warm-border bg-warm-surface px-3 py-2.5 text-[14px] text-text-primary outline-none transition-colors focus:border-text-muted";
@@ -28,23 +29,41 @@ export default function BlobUploadField({
   label,
   kind,
   defaultValue = "",
+  value,
+  onValueChange,
   hint,
   buttonLabel,
+  onPosterReady,
 }: {
   name: string;
   label: string;
   kind: Kind;
+  /** 不傳就是自己管理狀態（uncontrolled）；傳了就由外層（WorkForm）掌控目前值 */
   defaultValue?: string;
+  value?: string;
+  onValueChange?: (url: string) => void;
   hint?: string;
   buttonLabel?: string;
+  /** kind="video" 專用：影片上傳後自動擷取一張畫面當封面，擷取完成回傳網址 */
+  onPosterReady?: (url: string) => void;
 }) {
   const conf = CONF[kind];
-  const [url, setUrl] = useState(defaultValue);
+  const controlled = value !== undefined;
+  const [innerUrl, setInnerUrl] = useState(defaultValue);
+  const url = controlled ? value! : innerUrl;
+  const setUrl = (v: string) => {
+    if (controlled) onValueChange?.(v);
+    else setInnerUrl(v);
+  };
+
   const [status, setStatus] = useState<
     "idle" | "preparing" | "uploading" | "error"
   >("idle");
   const [prog, setProg] = useState({ loaded: 0, total: 0, mbps: 0, eta: 0 });
   const [error, setError] = useState<string | null>(null);
+  const [posterState, setPosterState] = useState<
+    "idle" | "capturing" | "done" | "failed"
+  >("idle");
   const fileRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const tick = useRef({ t0: 0, lastAt: 0 });
@@ -58,6 +77,29 @@ export default function BlobUploadField({
   function openPicker() {
     warm();
     fileRef.current?.click();
+  }
+
+  // 影片上傳後，順手在瀏覽器端截一張畫面當封面上傳，不用使用者自己截圖存檔。
+  // 跟主上傳平行跑，失敗就默默放棄（使用者仍可自行貼網址/上傳封面）。
+  function autoCapturePoster(file: File) {
+    if (!onPosterReady) return;
+    setPosterState("capturing");
+    captureVideoPoster(file)
+      .then(async (blob) => {
+        if (!blob) {
+          setPosterState("failed");
+          return;
+        }
+        const result = await upload(`covers/${Date.now()}-auto.jpg`, blob, {
+          access: "public",
+          handleUploadUrl: UPLOAD_URL,
+          clientPayload: "image",
+          contentType: "image/jpeg",
+        });
+        onPosterReady(result.url);
+        setPosterState("done");
+      })
+      .catch(() => setPosterState("failed"));
   }
 
   async function onPick(e: React.ChangeEvent<HTMLInputElement>) {
@@ -83,6 +125,9 @@ export default function BlobUploadField({
     setStatus("preparing");
     setProg({ loaded: 0, total: file.size, mbps: 0, eta: 0 });
     setError(null);
+    setPosterState("idle");
+
+    if (kind === "video") autoCapturePoster(file);
 
     try {
       const ext = file.name.split(".").pop()?.toLowerCase() || "bin";
@@ -220,6 +265,14 @@ export default function BlobUploadField({
                     (prog.eta > 1 ? ` · 剩約 ${Math.ceil(prog.eta)} 秒` : "")}
               </p>
             </div>
+          )}
+
+          {kind === "video" && posterState !== "idle" && (
+            <p className="text-[11px] text-text-muted">
+              {posterState === "capturing" && "封面：自動擷取畫面中…"}
+              {posterState === "done" && "封面：已自動從影片擷取 ✓（下方可重新上傳覆蓋）"}
+              {posterState === "failed" && "封面：自動擷取失敗，請手動上傳封面"}
+            </p>
           )}
 
           {status === "error" && error ? (
