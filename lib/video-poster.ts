@@ -4,9 +4,31 @@
 // frameToBlob()：把「現在畫面」轉成 JPEG blob，給 FramePickerModal 用 ——
 //   使用者像 IG Reels 編輯器一樣拖時間軸選畫格，選好的那一幀直接截圖。
 
+// 抽樣幾個點，判斷整張圖是不是幾乎全黑（影格還沒解碼出來時 canvas 會是黑的）
+function looksBlank(ctx: CanvasRenderingContext2D, w: number, h: number): boolean {
+  try {
+    const pts: [number, number][] = [
+      [w * 0.2, h * 0.2],
+      [w * 0.5, h * 0.5],
+      [w * 0.8, h * 0.3],
+      [w * 0.3, h * 0.75],
+      [w * 0.7, h * 0.8],
+    ];
+    let maxLuma = 0;
+    for (const [x, y] of pts) {
+      const d = ctx.getImageData(Math.floor(x), Math.floor(y), 1, 1).data;
+      maxLuma = Math.max(maxLuma, 0.299 * d[0] + 0.587 * d[1] + 0.114 * d[2]);
+    }
+    return maxLuma < 8;
+  } catch {
+    // getImageData 被跨源污染擋下時不要誤判
+    return false;
+  }
+}
+
 export async function frameToBlob(
   video: HTMLVideoElement,
-  opts: { maxWidth?: number; quality?: number } = {}
+  opts: { maxWidth?: number; quality?: number; rejectBlank?: boolean } = {}
 ): Promise<Blob | null> {
   const maxWidth = opts.maxWidth ?? 1080;
   const quality = opts.quality ?? 0.85;
@@ -21,6 +43,9 @@ export async function frameToBlob(
     const ctx = canvas.getContext("2d");
     if (!ctx) return null;
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    if (opts.rejectBlank && looksBlank(ctx, canvas.width, canvas.height)) {
+      return null;
+    }
     return await new Promise<Blob | null>((resolve) =>
       canvas.toBlob((b) => resolve(b), "image/jpeg", quality)
     );

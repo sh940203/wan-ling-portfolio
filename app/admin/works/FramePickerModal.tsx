@@ -9,7 +9,39 @@ const fmt = (s: number) => {
   return `${m}:${String(sec).padStart(2, "0")}`;
 };
 
-// 像 IG Reels 編輯器一樣：完整播放影片、拖時間軸選畫格，選好按「設為封面」。
+type RVFC = HTMLVideoElement & {
+  requestVideoFrameCallback?: (cb: () => void) => number;
+};
+
+// 強制瀏覽器把「目前 currentTime 那一幀」解碼並畫出來。
+// Chromium（尤其 Windows）對暫停狀態下的 seek 常常不重繪；大的遠端檔案
+// 還可能 seeked 事件先到、該位置資料卻還沒下載完。靠 muted play → 抓到
+// 一個 video frame 就 pause，同時解掉這兩件事。
+function paintCurrentFrame(v: HTMLVideoElement): Promise<void> {
+  return new Promise((resolve) => {
+    let done = false;
+    let timer: ReturnType<typeof setTimeout>;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      try {
+        v.pause();
+      } catch {
+        /* ignore */
+      }
+      resolve();
+    };
+    const rvfc = v as RVFC;
+    if (typeof rvfc.requestVideoFrameCallback === "function") {
+      rvfc.requestVideoFrameCallback(() => finish());
+    }
+    timer = setTimeout(finish, 2000); // 保底
+    v.play().catch(() => finish()); // 自動播放被擋也放行
+  });
+}
+
+// 像 IG Reels 編輯器一樣：拖時間軸選畫格，選好按「設為封面」。
 export default function FramePickerModal({
   source,
   onConfirm,
@@ -32,8 +64,10 @@ export default function FramePickerModal({
   const [duration, setDuration] = useState(0);
   const [time, setTime] = useState(0);
   const [ready, setReady] = useState(false);
+  const [seeking, setSeeking] = useState(false);
   const [capturing, setCapturing] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [fatal, setFatal] = useState(false);
 
   useEffect(() => {
     return () => {
@@ -51,19 +85,32 @@ export default function FramePickerModal({
     }
     // 預設停在 25%，跟自動擷取邏輯一致，使用者可以再自己拖
     const t = Math.min(Math.max(d * 0.25, 0.1), Math.max(d - 0.1, 0.1));
+    setSeeking(true);
     v.currentTime = t;
   }
 
-  function onSeeked() {
-    setTime(videoRef.current?.currentTime ?? 0);
+  async function onSeeked() {
+    const v = videoRef.current;
+    if (!v) return;
+    await paintCurrentFrame(v);
+    setTime(v.currentTime);
+    setSeeking(false);
     setReady(true);
   }
 
   function onScrub(e: React.ChangeEvent<HTMLInputElement>) {
     const t = Number(e.target.value);
     setTime(t);
-    setReady(false);
+    setSeeking(true);
+    setErr(null);
     if (videoRef.current) videoRef.current.currentTime = t;
+  }
+
+  function onVideoError() {
+    setFatal(true);
+    setErr(
+      "這個瀏覽器無法解碼這支影片（可能是 4K 或特殊編碼）。請直接在下方「封面圖」欄位手動上傳一張圖。"
+    );
   }
 
   async function confirm() {
@@ -71,14 +118,18 @@ export default function FramePickerModal({
     if (!v) return;
     setCapturing(true);
     setErr(null);
-    const blob = await frameToBlob(v);
+    // 確認畫面真的畫出來了再截，避免截到黑幀
+    await paintCurrentFrame(v);
+    const blob = await frameToBlob(v, { rejectBlank: true });
     setCapturing(false);
     if (!blob) {
-      setErr("這一幀擷取失敗，拖到別的時間點再試一次");
+      setErr("這一幀還是黑的（可能正在緩衝）。稍等一下、或把時間軸拖到別的位置再試。");
       return;
     }
     onConfirm(blob);
   }
+
+  const showOverlay = !ready || seeking;
 
   return (
     <div
@@ -107,11 +158,16 @@ export default function FramePickerModal({
             className="absolute inset-0 h-full w-full object-contain"
             onLoadedMetadata={onLoadedMetadata}
             onSeeked={onSeeked}
+            onError={onVideoError}
           />
-          {!ready && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-              <span className="text-[12px] text-white/80">
-                {duration ? "定位中…" : "載入影片中…"}
+          {showOverlay && !fatal && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+              <span className="text-[12px] text-white/85">
+                {!duration
+                  ? "載入影片中…"
+                  : seeking
+                  ? "定位中…（大檔案可能要幾秒）"
+                  : "準備中…"}
               </span>
             </div>
           )}
@@ -125,7 +181,7 @@ export default function FramePickerModal({
             step={0.03}
             value={time}
             onChange={onScrub}
-            disabled={!duration}
+            disabled={!duration || fatal}
             className="h-1.5 w-full accent-[#5C4A3A] disabled:opacity-40"
           />
           <span className="w-10 shrink-0 text-right text-[11px] tabular-nums text-text-muted">
@@ -144,12 +200,12 @@ export default function FramePickerModal({
             onClick={onClose}
             className="h-10 rounded-full px-4 text-[12px] text-text-secondary transition-colors hover:text-text-primary"
           >
-            取消
+            {fatal ? "關閉" : "取消"}
           </button>
           <button
             type="button"
             onClick={confirm}
-            disabled={!ready || capturing}
+            disabled={!ready || seeking || capturing || fatal}
             className="h-10 rounded-full bg-text-primary px-5 text-[12px] tracking-[0.04em] text-on-dark transition-colors hover:bg-[#4A3A2C] disabled:opacity-50"
           >
             {capturing ? "擷取中…" : "設為封面"}
