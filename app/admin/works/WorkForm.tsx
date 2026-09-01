@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { saveWorkAction } from "../actions";
+import CoverImageField from "./CoverImageField";
 import type { Work } from "@/lib/types";
 
 const inputCls =
@@ -115,17 +116,7 @@ export default function WorkForm({ work }: { work?: Work }) {
         </Field>
       </div>
 
-      <Field
-        label="自訂封面圖網址 Cover (可留空)"
-        hint="留空時 Instagram 作品會自動抓縮圖"
-      >
-        <input
-          name="coverImage"
-          defaultValue={work?.coverImage ?? ""}
-          className={inputCls}
-          placeholder="https://... 或 /covers/01.jpg"
-        />
-      </Field>
+      <CoverImageField defaultValue={work?.coverImage ?? ""} />
 
       <Field label="說明 Description" hint="中英各一段，中間用換行分隔">
         <textarea
