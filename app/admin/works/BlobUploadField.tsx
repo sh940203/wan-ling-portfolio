@@ -3,6 +3,8 @@
 import { useRef, useState } from "react";
 import { upload } from "@vercel/blob/client";
 import { captureVideoPoster } from "@/lib/video-poster";
+import { uploadCoverBlob } from "@/lib/blob-upload";
+import FramePickerModal from "./FramePickerModal";
 
 const inputCls =
   "w-full rounded-md border-[0.5px] border-warm-border bg-warm-surface px-3 py-2.5 text-[14px] text-text-primary outline-none transition-colors focus:border-text-muted";
@@ -44,7 +46,7 @@ export default function BlobUploadField({
   onValueChange?: (url: string) => void;
   hint?: string;
   buttonLabel?: string;
-  /** kind="video" 專用：影片上傳後自動擷取一張畫面當封面，擷取完成回傳網址 */
+  /** kind="video" 專用：選好封面畫格後回傳網址 */
   onPosterReady?: (url: string) => void;
 }) {
   const conf = CONF[kind];
@@ -64,6 +66,8 @@ export default function BlobUploadField({
   const [posterState, setPosterState] = useState<
     "idle" | "capturing" | "done" | "failed"
   >("idle");
+  // 選好的影片先停在這裡等使用者在畫格選取器裡挑封面，確認後才真正開始上傳
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const tick = useRef({ t0: 0, lastAt: 0 });
@@ -79,7 +83,7 @@ export default function BlobUploadField({
     fileRef.current?.click();
   }
 
-  // 影片上傳後，順手在瀏覽器端截一張畫面當封面上傳，不用使用者自己截圖存檔。
+  // 保底：使用者在畫格選取器按「取消」時，改用自動擷取（片長 25% 處）當封面，
   // 跟主上傳平行跑，失敗就默默放棄（使用者仍可自行貼網址/上傳封面）。
   function autoCapturePoster(file: File) {
     if (!onPosterReady) return;
@@ -90,44 +94,32 @@ export default function BlobUploadField({
           setPosterState("failed");
           return;
         }
-        const result = await upload(`covers/${Date.now()}-auto.jpg`, blob, {
-          access: "public",
-          handleUploadUrl: UPLOAD_URL,
-          clientPayload: "image",
-          contentType: "image/jpeg",
-        });
-        onPosterReady(result.url);
+        const coverUrl = await uploadCoverBlob(blob);
+        onPosterReady(coverUrl);
         setPosterState("done");
       })
       .catch(() => setPosterState("failed"));
   }
 
-  async function onPick(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    e.target.value = ""; // 允許再次選同一個檔案
-    if (!file) return;
+  // 使用者在畫格選取器裡挑好的那一幀
+  function useHandPickedPoster(blob: Blob) {
+    if (!onPosterReady) return;
+    setPosterState("capturing");
+    uploadCoverBlob(blob)
+      .then((coverUrl) => {
+        onPosterReady(coverUrl);
+        setPosterState("done");
+      })
+      .catch(() => setPosterState("failed"));
+  }
 
-    const typePrefix = kind === "image" ? "image/" : "video/";
-    if (!file.type.startsWith(typePrefix)) {
-      setStatus("error");
-      setError(kind === "image" ? "請選擇圖片檔" : "請選擇影片檔");
-      return;
-    }
-    if (file.size > conf.maxMB * MB) {
-      setStatus("error");
-      setError(`檔案太大（上限 ${conf.maxMB >= 1024 ? conf.maxMB / 1024 + "GB" : conf.maxMB + "MB"}）`);
-      return;
-    }
-
+  async function startUpload(file: File) {
     const ctrl = new AbortController();
     abortRef.current = ctrl;
     tick.current = { t0: Date.now(), lastAt: 0 };
     setStatus("preparing");
     setProg({ loaded: 0, total: file.size, mbps: 0, eta: 0 });
     setError(null);
-    setPosterState("idle");
-
-    if (kind === "video") autoCapturePoster(file);
 
     try {
       const ext = file.name.split(".").pop()?.toLowerCase() || "bin";
@@ -163,6 +155,34 @@ export default function BlobUploadField({
     } finally {
       abortRef.current = null;
     }
+  }
+
+  function onPick(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // 允許再次選同一個檔案
+    if (!file) return;
+
+    const typePrefix = kind === "image" ? "image/" : "video/";
+    if (!file.type.startsWith(typePrefix)) {
+      setStatus("error");
+      setError(kind === "image" ? "請選擇圖片檔" : "請選擇影片檔");
+      return;
+    }
+    if (file.size > conf.maxMB * MB) {
+      setStatus("error");
+      setError(`檔案太大（上限 ${conf.maxMB >= 1024 ? conf.maxMB / 1024 + "GB" : conf.maxMB + "MB"}）`);
+      return;
+    }
+
+    setError(null);
+    setPosterState("idle");
+
+    // 影片：先讓使用者像 IG Reels 編輯器一樣挑封面畫格，挑好才真正開始上傳
+    if (kind === "video" && onPosterReady) {
+      setPendingFile(file);
+      return;
+    }
+    startUpload(file);
   }
 
   const busy = status === "preparing" || status === "uploading";
@@ -269,9 +289,9 @@ export default function BlobUploadField({
 
           {kind === "video" && posterState !== "idle" && (
             <p className="text-[11px] text-text-muted">
-              {posterState === "capturing" && "封面：自動擷取畫面中…"}
-              {posterState === "done" && "封面：已自動從影片擷取 ✓（下方可重新上傳覆蓋）"}
-              {posterState === "failed" && "封面：自動擷取失敗，請手動上傳封面"}
+              {posterState === "capturing" && "封面：上傳擷取的畫格中…"}
+              {posterState === "done" && "封面：已套用你選的畫格 ✓（下方可重新上傳覆蓋）"}
+              {posterState === "failed" && "封面：擷取失敗，請手動上傳封面"}
             </p>
           )}
 
@@ -296,6 +316,24 @@ export default function BlobUploadField({
         onChange={onPick}
         className="hidden"
       />
+
+      {pendingFile && (
+        <FramePickerModal
+          source={pendingFile}
+          onConfirm={(blob) => {
+            const file = pendingFile;
+            setPendingFile(null);
+            useHandPickedPoster(blob);
+            startUpload(file);
+          }}
+          onClose={() => {
+            const file = pendingFile;
+            setPendingFile(null);
+            autoCapturePoster(file);
+            startUpload(file);
+          }}
+        />
+      )}
     </div>
   );
 }

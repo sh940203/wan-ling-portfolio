@@ -54,5 +54,6 @@ export const sampleWorks: Work[] = reels.map((r, i) => ({
   description:
     "為日昀美睫剪輯的社群短影音，以暖色調與輕快節奏呈現美睫服務的質感。\nA social reel edited for Riyun Eyelash, presenting the craft of eyelash styling with warm tones and a light, rhythmic cut.",
   featured: Boolean(r.featured),
+  featuredOrder: null,
   order: i + 1,
 }));

@@ -48,6 +48,8 @@ export interface Work {
   description: string;
   /** 是否顯示在首頁 Featured（Notion: featured） */
   featured: boolean;
+  /** 首頁精選區塊內的順序，跟作品清單的 order 脫鉤；null = 尚未手動排過（用 order 墊底） */
+  featuredOrder: number | null;
   /** 排序，數字越小越前（Notion: order） */
   order: number;
 }

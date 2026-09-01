@@ -15,6 +15,7 @@ import {
   deleteWork,
   updateWorkTitle,
   reorderWorks,
+  reorderFeatured,
   batchSetWorkType,
   setFeatured,
   type WorkInput,
@@ -222,5 +223,19 @@ export async function reorderWorksAction(
     }
   }
   await reorderWorks(items);
+  return { ok: true };
+}
+
+export async function reorderFeaturedAction(
+  items: { id: string; featuredOrder: number }[]
+): Promise<{ ok: boolean }> {
+  await requireAuth();
+  if (!Array.isArray(items) || items.length === 0) return { ok: false };
+  for (const item of items) {
+    if (typeof item.id !== "string" || typeof item.featuredOrder !== "number") {
+      return { ok: false };
+    }
+  }
+  await reorderFeatured(items);
   return { ok: true };
 }

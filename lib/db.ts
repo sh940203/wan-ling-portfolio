@@ -74,6 +74,12 @@ async function ensureSchema(c: Client) {
   } catch {
     // 欄位已存在，略過
   }
+  try {
+    // 首頁精選的獨立排序，跟作品清單的 order 脫鉤；NULL = 未設定（非精選、或精選但還沒排過）
+    await c.execute(`ALTER TABLE works ADD COLUMN featured_order INTEGER`);
+  } catch {
+    // 欄位已存在，略過
+  }
 }
 
 async function seedIfEmpty(c: Client) {

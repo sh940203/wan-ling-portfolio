@@ -27,6 +27,7 @@ function rowToWork(r: any): Work {
     coverImage: r.cover_image ?? null,
     description: String(r.description ?? ""),
     featured: Number(r.featured) === 1,
+    featuredOrder: r.featured_order == null ? null : Number(r.featured_order),
     order: Number(r.order ?? 0),
   };
 }
@@ -43,7 +44,14 @@ export async function getAllWorks(): Promise<Work[]> {
 
 export async function getFeaturedWorks(limit?: number): Promise<Work[]> {
   const all = await getAllWorks();
-  const featured = all.filter((w) => w.featured);
+  const featured = all
+    .filter((w) => w.featured)
+    // 有手動排過（featuredOrder 非 null）的先比，沒排過的用清單 order 墊底
+    .sort((a, b) => {
+      const ao = a.featuredOrder ?? Number.MAX_SAFE_INTEGER;
+      const bo = b.featuredOrder ?? Number.MAX_SAFE_INTEGER;
+      return ao !== bo ? ao - bo : a.order - b.order;
+    });
   return typeof limit === "number" ? featured.slice(0, limit) : featured;
 }
 
@@ -206,10 +214,19 @@ export async function batchSetWorkType(
 // 切換單一作品的首頁精選狀態（admin grid 直接點星星用，不用進 Edit 表單）
 export async function setFeatured(id: string, featured: boolean): Promise<void> {
   const db = await getDb();
-  await db.execute({
-    sql: `UPDATE works SET featured = ? WHERE id = ?`,
-    args: [featured ? 1 : 0, id],
-  });
+  if (featured) {
+    // 新設為精選：如果還沒有 featuredOrder，排到目前精選清單最後面
+    const res = await db.execute(
+      `SELECT COALESCE(MAX(featured_order), -1) AS m FROM works WHERE featured = 1`
+    );
+    const nextOrder = Number((res.rows[0] as any).m) + 1;
+    await db.execute({
+      sql: `UPDATE works SET featured = 1, featured_order = COALESCE(featured_order, ?) WHERE id = ?`,
+      args: [nextOrder, id],
+    });
+  } else {
+    await db.execute({ sql: `UPDATE works SET featured = 0 WHERE id = ?`, args: [id] });
+  }
   revalidatePublic();
 }
 
@@ -222,6 +239,21 @@ export async function reorderWorks(
     items.map(({ id, order }) => ({
       sql: `UPDATE works SET "order" = ? WHERE id = ?`,
       args: [order, id],
+    })),
+    "write"
+  );
+  revalidatePublic();
+}
+
+// 只調整首頁精選區塊內部的順序，跟作品清單的 order 脫鉤
+export async function reorderFeatured(
+  items: { id: string; featuredOrder: number }[]
+): Promise<void> {
+  const db = await getDb();
+  await db.batch(
+    items.map(({ id, featuredOrder }) => ({
+      sql: `UPDATE works SET featured_order = ? WHERE id = ?`,
+      args: [featuredOrder, id],
     })),
     "write"
   );

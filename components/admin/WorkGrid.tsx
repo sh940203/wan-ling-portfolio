@@ -25,7 +25,12 @@ import {
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { reorderWorksAction, batchSetWorkTypeAction, toggleFeaturedAction } from "@/app/admin/actions";
+import {
+  reorderWorksAction,
+  reorderFeaturedAction,
+  batchSetWorkTypeAction,
+  toggleFeaturedAction,
+} from "@/app/admin/actions";
 import DeleteButton from "@/components/admin/DeleteButton";
 import type { Work, WorkType } from "@/lib/types";
 import { coverUrl } from "@/lib/cover";
@@ -58,6 +63,10 @@ function Cell({
 }: CellProps) {
   const cover = coverUrl(work);
 
+  // 手機拖曳手感：只讓 transform/opacity 過渡（合成器動畫，不觸發重繪），
+  // box-shadow 改成瞬間切換（動畫中途才是最貴的重繪來源）；
+  // will-change 只在真的在動的格子上開，常駐開在 26 格上會讓手機吃不消。
+  const animating = overlay || isDragging || pressing;
   const wrapCls = [
     "relative aspect-square overflow-hidden group bg-warm-deep",
     overlay
@@ -67,7 +76,8 @@ function Cell({
       : pressing
       ? "scale-[1.04] shadow-2xl z-10"
       : "",
-    "transition-all duration-[80ms] ease-out will-change-transform",
+    "transition-[transform,opacity] duration-[80ms] ease-out",
+    animating ? "will-change-transform" : "",
     !batchMode && !overlay ? "cursor-grab active:cursor-grabbing" : "",
     batchMode ? "cursor-pointer" : "",
   ].filter(Boolean).join(" ");
@@ -112,12 +122,12 @@ function Cell({
               aria-pressed={work.featured}
               aria-label={work.featured ? "取消首頁精選" : "設為首頁精選"}
               title={work.featured ? "取消首頁精選" : "設為首頁精選"}
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-[15px] leading-none backdrop-blur-sm transition active:scale-90 hover:bg-black/60"
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-black/60 text-[15px] leading-none transition active:scale-90 hover:bg-black/75"
             >
               <span className={work.featured ? "text-amber-300" : "text-white/60"}>★</span>
             </button>
             {work.workType === "personal" && (
-              <span className="rounded bg-black/55 px-1.5 py-0.5 text-[9px] uppercase tracking-[0.06em] text-white backdrop-blur-sm">
+              <span className="rounded bg-black/65 px-1.5 py-0.5 text-[9px] uppercase tracking-[0.06em] text-white">
                 個人
               </span>
             )}
@@ -240,6 +250,7 @@ export default function WorkGrid({ initialWorks }: Props) {
   const [works, setWorks] = useState(initialWorks);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [batchMode, setBatchMode] = useState(false);
+  const [featuredMode, setFeaturedMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -270,6 +281,28 @@ export default function WorkGrid({ initialWorks }: Props) {
     ({ active, over }: DragEndEvent) => {
       setActiveId(null);
       if (!over || active.id === over.id) return;
+
+      if (featuredMode) {
+        // 精選排序模式：只在「已精選」子集裡排，不動其他作品的清單順序
+        const list = works.filter((w) => w.featured);
+        const oldIdx = list.findIndex((w) => w.id === active.id);
+        const newIdx = list.findIndex((w) => w.id === over.id);
+        const reordered = arrayMove(list, oldIdx, newIdx);
+        const rank = new Map(reordered.map((w, i) => [w.id, i]));
+        setWorks((prev) =>
+          prev.map((w) => (rank.has(w.id) ? { ...w, featuredOrder: rank.get(w.id)! } : w))
+        );
+        setSaving(true);
+        setSaved(false);
+        startTransition(async () => {
+          await reorderFeaturedAction(reordered.map((w, i) => ({ id: w.id, featuredOrder: i })));
+          setSaving(false);
+          setSaved(true);
+          setTimeout(() => setSaved(false), 2000);
+        });
+        return;
+      }
+
       const oldIdx = works.findIndex((w) => w.id === active.id);
       const newIdx = works.findIndex((w) => w.id === over.id);
       const next = arrayMove(works, oldIdx, newIdx);
@@ -283,7 +316,7 @@ export default function WorkGrid({ initialWorks }: Props) {
         setTimeout(() => setSaved(false), 2000);
       });
     },
-    [works]
+    [works, featuredMode]
   );
 
   const handleDragCancel = () => setActiveId(null);
@@ -318,7 +351,17 @@ export default function WorkGrid({ initialWorks }: Props) {
   }, [works]);
 
   const hasSelection = selected.size > 0;
-  const activeWork = activeId ? works.find((w) => w.id === activeId) ?? null : null;
+  // 精選排序模式：格子只顯示已精選的作品，拖曳只影響 featuredOrder
+  const visibleWorks = featuredMode
+    ? [...works]
+        .filter((w) => w.featured)
+        .sort((a, b) => {
+          const ao = a.featuredOrder ?? Number.MAX_SAFE_INTEGER;
+          const bo = b.featuredOrder ?? Number.MAX_SAFE_INTEGER;
+          return ao !== bo ? ao - bo : a.order - b.order;
+        })
+    : works;
+  const activeWork = activeId ? visibleWorks.find((w) => w.id === activeId) ?? null : null;
 
   return (
     <div>
@@ -348,6 +391,26 @@ export default function WorkGrid({ initialWorks }: Props) {
               <button onClick={exitBatch} className="text-[11px] text-text-muted hover:text-text-secondary">完成</button>
             </div>
           </>
+        ) : featuredMode ? (
+          <>
+            {saving || isPending ? (
+              <span className="text-[11px] text-text-muted tracking-[0.04em]">儲存中…</span>
+            ) : saved ? (
+              <span className="text-[11px] text-text-secondary tracking-[0.04em]">順序已儲存 ✓</span>
+            ) : visibleWorks.length === 0 ? (
+              <span className="text-[11px] text-text-muted tracking-[0.04em]">
+                尚無精選作品，先在格子上點 ★ 設定
+              </span>
+            ) : (
+              <span className="text-[11px] text-text-muted tracking-[0.04em]">
+                拖曳調整首頁精選順序（只影響這裡，不影響作品清單順序）
+              </span>
+            )}
+            <button onClick={() => setFeaturedMode(false)}
+              className="ml-auto rounded-full border-[0.5px] border-warm-border bg-warm-surface px-3 py-1 text-[11px] tracking-[0.04em] text-text-secondary hover:bg-warm-mid transition-colors">
+              完成
+            </button>
+          </>
         ) : (
           <>
             {saving || isPending ? (
@@ -357,10 +420,16 @@ export default function WorkGrid({ initialWorks }: Props) {
             ) : (
               <span className="text-[11px] text-text-muted tracking-[0.04em]">長壓格子拖曳排序</span>
             )}
-            <button onClick={() => setBatchMode(true)}
-              className="ml-auto rounded-full border-[0.5px] border-warm-border bg-warm-surface px-3 py-1 text-[11px] tracking-[0.04em] text-text-secondary hover:bg-warm-mid transition-colors">
-              批次編輯
-            </button>
+            <div className="ml-auto flex items-center gap-2">
+              <button onClick={() => setFeaturedMode(true)}
+                className="rounded-full border-[0.5px] border-warm-border bg-warm-surface px-3 py-1 text-[11px] tracking-[0.04em] text-text-secondary hover:bg-warm-mid transition-colors">
+                精選排序
+              </button>
+              <button onClick={() => setBatchMode(true)}
+                className="rounded-full border-[0.5px] border-warm-border bg-warm-surface px-3 py-1 text-[11px] tracking-[0.04em] text-text-secondary hover:bg-warm-mid transition-colors">
+                批次編輯
+              </button>
+            </div>
           </>
         )}
       </div>
@@ -373,10 +442,10 @@ export default function WorkGrid({ initialWorks }: Props) {
         onDragEnd={handleDragEnd}
         onDragCancel={handleDragCancel}
       >
-        <SortableContext items={works.map((w) => w.id)} strategy={rectSortingStrategy}>
+        <SortableContext items={visibleWorks.map((w) => w.id)} strategy={rectSortingStrategy}>
           {/* gap 用 bg-warm-border 呈現 IG 格線感 */}
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-[1px] bg-warm-border rounded-sm overflow-hidden">
-            {works.map((w, i) => (
+            {visibleWorks.map((w, i) => (
               <SortableCell
                 key={w.id} work={w} index={i}
                 batchMode={batchMode} isSelected={selected.has(w.id)}
@@ -400,7 +469,7 @@ export default function WorkGrid({ initialWorks }: Props) {
           {activeWork ? (
             <Cell
               work={activeWork}
-              index={works.findIndex((w) => w.id === activeWork.id)}
+              index={visibleWorks.findIndex((w) => w.id === activeWork.id)}
               batchMode={false} isSelected={false}
               pressing={false} isDragging={false} overlay
               pointerHandlers={{}} dndAttrs={{}} onToggle={() => {}} onToggleFeatured={() => {}}

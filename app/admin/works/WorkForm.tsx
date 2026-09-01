@@ -4,6 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { saveWorkAction } from "../actions";
 import BlobUploadField from "./BlobUploadField";
+import FramePickerModal from "./FramePickerModal";
+import { uploadCoverBlob } from "@/lib/blob-upload";
 import type { Work } from "@/lib/types";
 
 const inputCls =
@@ -31,8 +33,13 @@ function Field({
 
 export default function WorkForm({ work }: { work?: Work }) {
   const isEdit = Boolean(work);
-  // 封面狀態拉到這層：影片上傳完成後自動擷取的畫面，可以直接寫進封面欄位
+  // 封面、影片網址狀態拉到這層：
+  // - 影片選好畫格後可以直接寫進封面欄位
+  // - 已經上傳過影片的話，下面會多一顆「重新選封面畫格」按鈕，重新從整支影片挑
   const [cover, setCover] = useState(work?.coverImage ?? "");
+  const [videoFileUrl, setVideoFileUrl] = useState(work?.videoFile ?? "");
+  const [pickingCover, setPickingCover] = useState(false);
+  const [coverPickBusy, setCoverPickBusy] = useState(false);
   return (
     <form action={saveWorkAction} className="space-y-5">
       {work && <input type="hidden" name="id" value={work.id} />}
@@ -72,9 +79,10 @@ export default function WorkForm({ work }: { work?: Work }) {
         name="videoFile"
         label="影片檔 Video file（建議上傳，官網可直接播）"
         kind="video"
-        defaultValue={work?.videoFile ?? ""}
+        value={videoFileUrl}
+        onValueChange={setVideoFileUrl}
         buttonLabel="從相簿／檔案上傳影片"
-        hint="上傳 mp4／mov 後，官網用內建播放器直接播放，不再依賴 Instagram 內嵌（部分手機/電腦會播不出來）。留空則沿用上面的連結。上傳後會自動擷取一張畫面當封面（下面欄位還沒填的話）。"
+        hint="上傳 mp4／mov 後，官網用內建播放器直接播放，不再依賴 Instagram 內嵌（部分手機/電腦會播不出來）。留空則沿用上面的連結。上傳前會先讓你像 IG Reels 一樣挑一幀當封面。"
         onPosterReady={(u) => setCover((c) => c || u)}
       />
 
@@ -138,6 +146,36 @@ export default function WorkForm({ work }: { work?: Work }) {
         value={cover}
         onValueChange={setCover}
       />
+
+      {videoFileUrl && (
+        <div>
+          <button
+            type="button"
+            onClick={() => setPickingCover(true)}
+            disabled={coverPickBusy}
+            className="h-9 rounded-full border-[0.5px] border-warm-border bg-warm-surface px-4 text-[12px] tracking-[0.03em] text-text-body transition-colors hover:border-text-muted disabled:opacity-50"
+          >
+            {coverPickBusy ? "套用中…" : "🎞 從影片重新選一幀當封面"}
+          </button>
+        </div>
+      )}
+
+      {pickingCover && (
+        <FramePickerModal
+          source={videoFileUrl}
+          onConfirm={async (blob) => {
+            setPickingCover(false);
+            setCoverPickBusy(true);
+            try {
+              const url = await uploadCoverBlob(blob);
+              setCover(url);
+            } finally {
+              setCoverPickBusy(false);
+            }
+          }}
+          onClose={() => setPickingCover(false)}
+        />
+      )}
 
       <Field label="說明 Description" hint="中英各一段，中間用換行分隔">
         <textarea
