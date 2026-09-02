@@ -54,12 +54,14 @@ export default async function AboutPage() {
             {/* 證件照 */}
             <div className="shrink-0">
               <div className="h-[200px] w-[148px] overflow-hidden rounded-xl bg-warm-mid">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/photo-headshot.jpg"
-                  alt={site.name.zh}
-                  className="h-full w-full object-cover object-top"
-                />
+                {site.about.headshot && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={site.about.headshot}
+                    alt={site.name.zh}
+                    className="h-full w-full object-cover object-top"
+                  />
+                )}
               </div>
             </div>
             {/* Bio 中英切換 */}
@@ -119,74 +121,63 @@ export default async function AboutPage() {
           <div className="mt-12">
             <p className="label mb-4">Awards & Recognition</p>
 
-            {/* 660万 highlight card */}
-            <a
-              href="https://www.instagram.com/reel/DSZJMDjEfSa/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group mb-5 flex items-center gap-5 rounded-xl border-[0.5px] border-warm-border bg-warm-surface px-5 py-4 transition-colors hover:border-text-primary/25"
-            >
-              <div className="shrink-0">
-                <p className="display text-[40px] leading-none text-text-primary">
-                  660.3<span className="text-[22px]">萬</span>
-                </p>
-                <p className="mt-0.5 text-[9px] uppercase tracking-[0.12em] text-text-muted">
-                  views · instagram
-                </p>
+            {/* 重點數據卡 */}
+            {(site.about.highlight?.number || site.about.highlight?.title) && (
+              <a
+                href={site.about.highlight.url || "#"}
+                target={site.about.highlight.url ? "_blank" : undefined}
+                rel="noopener noreferrer"
+                className="group mb-5 flex items-center gap-5 rounded-xl border-[0.5px] border-warm-border bg-warm-surface px-5 py-4 transition-colors hover:border-text-primary/25"
+              >
+                <div className="shrink-0">
+                  <p className="display text-[40px] leading-none text-text-primary">
+                    {site.about.highlight.number}
+                    {site.about.highlight.unit && (
+                      <span className="text-[22px]">{site.about.highlight.unit}</span>
+                    )}
+                  </p>
+                  {site.about.highlight.subLabel && (
+                    <p className="mt-0.5 text-[9px] uppercase tracking-[0.12em] text-text-muted">
+                      {site.about.highlight.subLabel}
+                    </p>
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[13px] text-text-body">
+                    {site.about.highlight.title}
+                  </p>
+                  {site.about.highlight.url && (
+                    <p className="mt-1 text-[11px] tracking-[0.06em] text-text-secondary transition-colors group-hover:text-text-primary">
+                      {site.about.highlight.linkText || "查看"} ↗
+                    </p>
+                  )}
+                </div>
+              </a>
+            )}
+
+            {/* 照片牆 — masonry，直式橫式混排不裁切 */}
+            {site.about.awardPhotos?.length > 0 && (
+              <div className="gap-5 sm:columns-2 [&>figure]:mb-5">
+                {site.about.awardPhotos.map(
+                  (p, i) =>
+                    p.src && (
+                      <figure key={i} className="break-inside-avoid">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={p.src}
+                          alt={p.caption?.replace(/\n/g, " ") || ""}
+                          className="w-full rounded-xl"
+                        />
+                        {p.caption && (
+                          <figcaption className="mt-2.5 whitespace-pre-line text-center text-[11px] leading-[1.65] tracking-[0.04em] text-text-muted">
+                            {p.caption}
+                          </figcaption>
+                        )}
+                      </figure>
+                    )
+                )}
               </div>
-              <div className="min-w-0">
-                <p className="text-[13px] text-text-body">
-                  畢業展覽短影音 — 元福宮創意腳本
-                </p>
-                <p className="mt-1 text-[11px] tracking-[0.06em] text-text-secondary transition-colors group-hover:text-text-primary">
-                  觀看影片 ↗
-                </p>
-              </div>
-            </a>
-
-            {/* 頒獎典禮 + 獎狀 */}
-            <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
-              {/* 頒獎典禮 */}
-              <figure className="sm:flex-[3]">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/photo-event-stage.jpg"
-                  alt="元福宮 × 嶺東科大 FBM 第七屆畢業專題競賽頒獎典禮"
-                  className="aspect-[4/3] w-full rounded-xl object-cover"
-                />
-                <figcaption className="mt-2.5 text-center text-[11px] leading-[1.65] tracking-[0.04em] text-text-muted">
-                  元福宮 × 嶺東科大 FBM<br />
-                  第七屆畢業專題競賽 · 頒獎典禮
-                </figcaption>
-              </figure>
-
-              {/* 獎狀 — 自然直式比例，不裁切 */}
-              <figure className="sm:flex-[2]">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/photo-award.jpg"
-                  alt="115學年度嶺東科大時尚經營系論文組第三名獎狀"
-                  className="w-full rounded-xl"
-                />
-                <figcaption className="mt-2.5 text-center text-[11px] leading-[1.65] tracking-[0.04em] text-text-muted">
-                  115學年度 · 論文組第三名<br />
-                  消費者對二手奢侈品之態度與購買意願
-                </figcaption>
-              </figure>
-            </div>
-
-            {/* 展覽現場 */}
-            <figure className="mt-5">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/photo-event-candid.jpg"
-                alt="畢業展覽現場 — 研究成果展示與團隊合照"
-                className="aspect-[4/3] w-full rounded-xl object-cover"
-              />
-              <figcaption className="mt-2.5 text-center text-[11px] leading-[1.65] tracking-[0.04em] text-text-muted">
-                畢業展覽現場 — 研究成果展示 · 二手奢侈品實物陳列 · 團隊合照
-              </figcaption>
-            </figure>
+            )}
           </div>
         </Reveal>
 

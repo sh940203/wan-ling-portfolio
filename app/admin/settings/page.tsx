@@ -1,5 +1,7 @@
 import { getSettings } from "@/lib/settings";
 import { saveSettingsAction } from "../actions";
+import RepeatableList from "@/components/admin/RepeatableList";
+import BlobUploadField from "@/app/admin/works/BlobUploadField";
 
 export const dynamic = "force-dynamic";
 
@@ -58,7 +60,6 @@ export default async function SettingsPage({
   searchParams: { saved?: string; error?: string };
 }) {
   const s = await getSettings();
-  const expJson = JSON.stringify(s.about.experience ?? [], null, 2);
 
   return (
     <div>
@@ -74,9 +75,10 @@ export default async function SettingsPage({
           已儲存 ✓
         </div>
       )}
-      {searchParams.error === "experience" && (
+      {(searchParams.error === "experience" ||
+        searchParams.error === "awardPhotos") && (
         <div className="mb-4 rounded-md border-[0.5px] border-[#D9A38F] bg-[#F4E3DC] px-4 py-2 text-[12px] text-[#8A4A36]">
-          Experience JSON 格式錯誤，未儲存。請檢查格式。
+          內容格式有誤，未儲存。請重試一次。
         </div>
       )}
 
@@ -132,13 +134,25 @@ export default async function SettingsPage({
           />
         </Section>
 
-        <Section title="關於 About">
-          <Field
-            label="照片網址"
-            name="about.photo"
-            defaultValue={s.about.photo}
-            hint="貼一個圖片網址，或放檔案到 public/ 後填 /portrait.jpg"
-          />
+        <Section title="關於 About — 圖片與介紹">
+          <div>
+            <label className={labelCls}>About 頁頂端全寬照片</label>
+            <BlobUploadField
+              name="about.photo"
+              label=""
+              kind="image"
+              defaultValue={s.about.photo}
+            />
+          </div>
+          <div>
+            <label className={labelCls}>證件照（首頁自我介紹 + About 頁）</label>
+            <BlobUploadField
+              name="about.headshot"
+              label=""
+              kind="image"
+              defaultValue={s.about.headshot}
+            />
+          </div>
           <div>
             <label className={labelCls}>自我介紹（中）</label>
             <textarea
@@ -163,18 +177,58 @@ export default async function SettingsPage({
             defaultValue={s.about.skills.join(", ")}
             hint="用逗號分隔，例如：Premiere Pro, DaVinci Resolve, Color Grading"
           />
-          <div>
-            <label className={labelCls}>經歷 Experience（JSON）</label>
-            <textarea
-              name="about.experienceJson"
-              defaultValue={expJson}
-              rows={8}
-              className={`${inputCls} resize-y font-mono text-[12px]`}
-            />
-            <p className="mt-1 text-[11px] text-text-muted">
-              陣列，每筆含 role / org / period / desc / link 欄位。
-            </p>
+        </Section>
+
+        <Section title="經歷 Experience">
+          <p className="text-[11px] text-text-muted">
+            顯示在 About 頁。每筆會依順序排列，可上下移動、刪除。
+          </p>
+          <RepeatableList
+            name="about.experienceJson"
+            initial={s.about.experience ?? []}
+            addLabel="新增一筆經歷"
+            emptyHint="還沒有任何經歷，按下方按鈕新增。"
+            fields={[
+              { key: "role", label: "職稱 / 標題", type: "text", placeholder: "短影音剪輯 · 畢製公關" },
+              { key: "period", label: "期間", type: "text", placeholder: "2024 – 2025", span: "half" },
+              { key: "org", label: "單位 / 機構", type: "text", placeholder: "嶺東科大時尚經營系 畢業製作 — 元福宮" },
+              { key: "link", label: "連結（可留空）", type: "text", placeholder: "https://www.instagram.com/reel/..." },
+              { key: "desc", label: "說明", type: "textarea" },
+            ]}
+          />
+        </Section>
+
+        <Section title="重點數據卡 Highlight">
+          <p className="text-[11px] text-text-muted">
+            首頁自我介紹那行的「660.3萬 IG 瀏覽」，以及 About 頁 Awards 區塊最上面那張大數字卡。
+          </p>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <Field label="數字" name="about.highlight.number" defaultValue={s.about.highlight.number} placeholder="660.3" />
+            <Field label="單位" name="about.highlight.unit" defaultValue={s.about.highlight.unit} placeholder="萬" />
+            <Field label="卡片小字" name="about.highlight.subLabel" defaultValue={s.about.highlight.subLabel} placeholder="views · instagram" />
+            <Field label="首頁那行標籤" name="about.highlight.homeLabel" defaultValue={s.about.highlight.homeLabel} placeholder="IG 瀏覽" />
           </div>
+          <Field label="卡片標題" name="about.highlight.title" defaultValue={s.about.highlight.title} placeholder="畢業展覽短影音 — 元福宮創意腳本" />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field label="連結文字" name="about.highlight.linkText" defaultValue={s.about.highlight.linkText} placeholder="觀看影片" />
+            <Field label="連結網址" name="about.highlight.url" defaultValue={s.about.highlight.url} placeholder="https://www.instagram.com/reel/..." />
+          </div>
+        </Section>
+
+        <Section title="Awards 照片牆">
+          <p className="text-[11px] text-text-muted">
+            About 頁 Awards 區塊的照片，直式橫式都可以，會自動排版不裁切。說明文字可換行。
+          </p>
+          <RepeatableList
+            name="about.awardPhotosJson"
+            initial={s.about.awardPhotos ?? []}
+            addLabel="新增一張照片"
+            emptyHint="還沒有照片，按下方按鈕新增。"
+            fields={[
+              { key: "src", label: "照片", type: "image" },
+              { key: "caption", label: "說明文字（可換行）", type: "textarea" },
+            ]}
+          />
         </Section>
 
         <Section title="聯絡頁 / 履歷">

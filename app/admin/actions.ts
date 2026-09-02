@@ -159,6 +159,7 @@ export async function saveSettingsAction(formData: FormData) {
   s.workIntro = str(formData, "workIntro");
 
   s.about.photo = str(formData, "about.photo");
+  s.about.headshot = str(formData, "about.headshot");
   s.about.bioZh = String(formData.get("about.bioZh") ?? "").trim();
   s.about.bioEn = String(formData.get("about.bioEn") ?? "").trim();
   s.about.skills = str(formData, "about.skills")
@@ -166,15 +167,37 @@ export async function saveSettingsAction(formData: FormData) {
     .map((t) => t.trim())
     .filter(Boolean);
 
-  // Experience 以 JSON 編輯（解析失敗則保留原值）
-  const expRaw = String(formData.get("about.experienceJson") ?? "").trim();
-  if (expRaw) {
+  // 重點數據卡
+  s.about.highlight.number = str(formData, "about.highlight.number");
+  s.about.highlight.unit = str(formData, "about.highlight.unit");
+  s.about.highlight.subLabel = str(formData, "about.highlight.subLabel");
+  s.about.highlight.homeLabel = str(formData, "about.highlight.homeLabel");
+  s.about.highlight.title = str(formData, "about.highlight.title");
+  s.about.highlight.linkText = str(formData, "about.highlight.linkText");
+  s.about.highlight.url = str(formData, "about.highlight.url");
+
+  // Experience / Awards 照片：來自結構化編輯器，值是 hidden 欄位裡的 JSON 字串
+  const parseList = (key: string, errTag: string): unknown[] | undefined => {
+    const raw = String(formData.get(key) ?? "").trim();
+    if (!raw) return [];
     try {
-      const parsed = JSON.parse(expRaw);
-      if (Array.isArray(parsed)) s.about.experience = parsed;
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : undefined;
     } catch {
-      redirect("/admin/settings?error=experience");
+      redirect(`/admin/settings?error=${errTag}`);
     }
+  };
+  const exp = parseList("about.experienceJson", "experience");
+  if (exp) {
+    s.about.experience = exp
+      .map((r) => (r ?? {}) as Record<string, string>)
+      .filter((r) => r.role || r.org || r.desc) as typeof s.about.experience;
+  }
+  const awardPhotos = parseList("about.awardPhotosJson", "awardPhotos");
+  if (awardPhotos) {
+    s.about.awardPhotos = awardPhotos
+      .map((r) => (r ?? {}) as Record<string, string>)
+      .filter((r) => r.src) as typeof s.about.awardPhotos;
   }
 
   s.contact.headline = str(formData, "contact.headline");

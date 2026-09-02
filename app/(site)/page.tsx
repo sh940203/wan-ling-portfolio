@@ -44,12 +44,14 @@ export default async function Home() {
               {/* 證件照 */}
               <div className="shrink-0">
                 <div className="h-[160px] w-[118px] overflow-hidden rounded-xl bg-warm-mid sm:h-[190px] sm:w-[140px]">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src="/photo-headshot.jpg"
-                    alt={site.name.zh}
-                    className="h-full w-full object-cover object-top"
-                  />
+                  {site.about.headshot && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={site.about.headshot}
+                      alt={site.name.zh}
+                      className="h-full w-full object-cover object-top"
+                    />
+                  )}
                 </div>
               </div>
               {/* 文字 */}
@@ -60,7 +62,7 @@ export default async function Home() {
                     {site.name.zh}
                   </h2>
                   <span className="text-[12px] tracking-[0.14em] text-text-secondary">
-                    WAN-LING
+                    {site.name.brand}
                   </span>
                 </div>
                 <p className="mt-1 text-[10px] uppercase tracking-[0.18em] text-text-muted">
@@ -76,17 +78,24 @@ export default async function Home() {
                   >
                     了解更多 →
                   </Link>
-                  <a
-                    href="https://www.instagram.com/reel/DSZJMDjEfSa/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 text-[11px] text-text-muted transition-colors hover:text-text-primary"
-                  >
-                    <span className="display text-[20px] leading-none text-text-primary">
-                      660.3<span className="text-[11px]">萬</span>
-                    </span>
-                    <span className="tracking-[0.04em]">IG 瀏覽 ↗</span>
-                  </a>
+                  {(site.about.highlight?.number || site.about.highlight?.homeLabel) && (
+                    <a
+                      href={site.about.highlight.url || "#"}
+                      target={site.about.highlight.url ? "_blank" : undefined}
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 text-[11px] text-text-muted transition-colors hover:text-text-primary"
+                    >
+                      <span className="display text-[20px] leading-none text-text-primary">
+                        {site.about.highlight.number}
+                        {site.about.highlight.unit && (
+                          <span className="text-[11px]">{site.about.highlight.unit}</span>
+                        )}
+                      </span>
+                      <span className="tracking-[0.04em]">
+                        {site.about.highlight.homeLabel} ↗
+                      </span>
+                    </a>
+                  )}
                 </div>
               </div>
             </div>

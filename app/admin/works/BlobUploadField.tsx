@@ -191,7 +191,7 @@ export default function BlobUploadField({
 
   return (
     <div>
-      <label className={labelCls}>{label}</label>
+      {label && <label className={labelCls}>{label}</label>}
 
       <div className="flex items-start gap-3">
         {/* 預覽 */}

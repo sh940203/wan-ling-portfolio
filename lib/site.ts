@@ -40,9 +40,39 @@ export const site = {
 
   // About 頁
   about: {
+    // About 頁頂端全寬照片
     photo: "/IMG_0557.jpg",
+    // 首頁自我介紹區塊 + About 頁的證件照
+    headshot: "/photo-headshot.jpg",
     bioZh: "嶺東科大時尚經營系應屆畢業生，曾擔任短影音小編和畢製公關，負責 IG、Threads 社群內容製作與活動宣傳。實際參與貼文企劃、文案撰寫與短影音剪輯拍攝，並具備基礎視覺排版能力，能依品牌需求執行社群內容製作並配合調整內容方向。熟悉社群運作節奏並擅長關注熱門趨勢，能快速上手社群行銷相關工作。",
     bioEn: "Recent graduate of Ling Tung University's Fashion Business & Merchandising program. Served as short-video editor and PR coordinator for her graduation project, managing IG and Threads content creation and event promotion. Experienced in post planning, copywriting, and short-form video production with solid visual layout skills. Comfortable adapting to brand needs and staying on top of trending content.",
+    // 重點數據卡：首頁「660.3萬 IG 瀏覽」＋ About 頁 Awards 區塊的大數字卡
+    highlight: {
+      number: "660.3",
+      unit: "萬",
+      // About 卡片下方小字（英文全大寫呈現）
+      subLabel: "views · instagram",
+      // 首頁那行 inline 標籤
+      homeLabel: "IG 瀏覽",
+      title: "畢業展覽短影音 — 元福宮創意腳本",
+      linkText: "觀看影片",
+      url: "https://www.instagram.com/reel/DSZJMDjEfSa/",
+    },
+    // About 頁 Awards 區塊的照片牆（可自由增減）
+    awardPhotos: [
+      {
+        src: "/photo-event-stage.jpg",
+        caption: "元福宮 × 嶺東科大 FBM\n第七屆畢業專題競賽 · 頒獎典禮",
+      },
+      {
+        src: "/photo-award.jpg",
+        caption: "115學年度 · 論文組第三名\n消費者對二手奢侈品之態度與購買意願",
+      },
+      {
+        src: "/photo-event-candid.jpg",
+        caption: "畢業展覽現場 — 研究成果展示 · 二手奢侈品實物陳列 · 團隊合照",
+      },
+    ],
     skills: [
       "Premiere Pro",
       "DaVinci Resolve",
