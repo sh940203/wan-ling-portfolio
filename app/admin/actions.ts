@@ -176,6 +176,22 @@ export async function saveSettingsAction(formData: FormData) {
   s.about.highlight.linkText = str(formData, "about.highlight.linkText");
   s.about.highlight.url = str(formData, "about.highlight.url");
 
+  // About 頁履歷區 + 聯絡呼籲
+  for (const k of ["title", "subtitle", "buttonLabel"] as const) {
+    const v = str(formData, `about.resume.${k}`);
+    if (v) s.about.resume[k] = v;
+  }
+  for (const k of ["kicker", "heading", "buttonLabel"] as const) {
+    const v = str(formData, `about.cta.${k}`);
+    if (v) s.about.cta[k] = v;
+  }
+
+  // 文字標籤 / 用詞：留空則保留預設
+  for (const k of Object.keys(s.labels) as (keyof typeof s.labels)[]) {
+    const v = str(formData, `labels.${k}`);
+    if (v) s.labels[k] = v;
+  }
+
   // Experience / Awards 照片：來自結構化編輯器，值是 hidden 欄位裡的 JSON 字串
   const parseList = (key: string, errTag: string): unknown[] | undefined => {
     const raw = String(formData.get(key) ?? "").trim();

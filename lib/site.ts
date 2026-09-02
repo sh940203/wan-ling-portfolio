@@ -102,6 +102,18 @@ export const site = {
         link: "https://www.instagram.com/riyun.eyelash/",
       },
     ],
+    // About 頁下方：履歷下載區
+    resume: {
+      title: "履歷 / Résumé",
+      subtitle: "下載完整經歷與作品列表（PDF）",
+      buttonLabel: "Download PDF ↓",
+    },
+    // About 頁最下方：聯絡行動呼籲
+    cta: {
+      kicker: "Get in touch",
+      heading: "想合作？歡迎聯絡。",
+      buttonLabel: "Contact me →",
+    },
   },
 
   contact: {
@@ -111,6 +123,32 @@ export const site = {
 
   // 作品頁副標
   workIntro: "社群短影音與影像剪輯作品。點擊任一件觀看完整影片。",
+
+  // 各頁面 / 區塊的標題、連結文字（可改用詞或翻譯）
+  labels: {
+    // 導覽列
+    navHome: "Home",
+    navAbout: "About",
+    navWork: "Work",
+    navContact: "Contact",
+    // 首頁
+    homeAboutKicker: "About",
+    homeMoreLink: "了解更多 →",
+    homeWorksKicker: "Selected Works",
+    homeWorksTitle: "精選作品",
+    homeWorksViewAll: "View all →",
+    homeWorksEmpty: "尚未有精選作品。",
+    // About 頁區塊標題
+    aboutExperienceTitle: "Experience",
+    aboutAwardsTitle: "Awards & Recognition",
+    aboutSkillsTitle: "Skills",
+    // 作品頁
+    workKicker: "Portfolio",
+    workTitle: "Work",
+    // 聯絡頁
+    contactKicker: "Contact",
+    contactElsewhereTitle: "Elsewhere",
+  },
 };
 
 export const navLinks = [

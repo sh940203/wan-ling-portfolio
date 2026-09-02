@@ -4,11 +4,20 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { navLinks, site } from "@/lib/site";
+import { navLinks as defaultNavLinks, site } from "@/lib/site";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
-export default function Nav({ brand = site.name.brand }: { brand?: string }) {
+type NavLink = { href: string; label: string };
+
+export default function Nav({
+  brand = site.name.brand,
+  links = defaultNavLinks as unknown as NavLink[],
+}: {
+  brand?: string;
+  links?: NavLink[];
+}) {
+  const navLinks = links;
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const reduce = useReducedMotion();

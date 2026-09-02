@@ -56,7 +56,7 @@ export default async function Home() {
               </div>
               {/* 文字 */}
               <div className="min-w-0 flex-1">
-                <p className="label mb-3">About</p>
+                <p className="label mb-3">{site.labels.homeAboutKicker}</p>
                 <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
                   <h2 className="display text-[28px] leading-none text-text-primary md:text-[34px]">
                     {site.name.zh}
@@ -76,7 +76,7 @@ export default async function Home() {
                     href="/about"
                     className="text-[11px] uppercase tracking-[0.14em] text-text-secondary underline-offset-4 transition-colors hover:text-text-primary hover:underline"
                   >
-                    了解更多 →
+                    {site.labels.homeMoreLink}
                   </Link>
                   {(site.about.highlight?.number || site.about.highlight?.homeLabel) && (
                     <a
@@ -111,16 +111,16 @@ export default async function Home() {
         <Reveal>
           <div className="mb-8 flex items-end justify-between">
             <div>
-              <p className="label mb-2">Selected Works</p>
+              <p className="label mb-2">{site.labels.homeWorksKicker}</p>
               <h2 className="text-[18px] font-medium text-text-primary">
-                精選作品
+                {site.labels.homeWorksTitle}
               </h2>
             </div>
             <Link
               href="/work"
               className="text-[11px] uppercase tracking-[0.12em] text-text-secondary transition-colors hover:text-text-primary"
             >
-              View all →
+              {site.labels.homeWorksViewAll}
             </Link>
           </div>
         </Reveal>
@@ -134,7 +134,7 @@ export default async function Home() {
             ))}
           </Stagger>
         ) : (
-          <p className="text-[14px] text-text-secondary">尚未有精選作品。</p>
+          <p className="text-[14px] text-text-secondary">{site.labels.homeWorksEmpty}</p>
         )}
       </section>
     </>

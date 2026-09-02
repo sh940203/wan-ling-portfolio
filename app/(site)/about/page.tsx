@@ -75,7 +75,7 @@ export default async function AboutPage() {
         {site.about.experience?.length > 0 && (
           <Reveal>
             <div className="mt-12">
-              <p className="label mb-4">Experience</p>
+              <p className="label mb-4">{site.labels.aboutExperienceTitle}</p>
               <div className="space-y-5">
                 {site.about.experience.map((exp, i) => (
                   <div
@@ -119,7 +119,7 @@ export default async function AboutPage() {
         {/* Awards & Recognition */}
         <Reveal>
           <div className="mt-12">
-            <p className="label mb-4">Awards & Recognition</p>
+            <p className="label mb-4">{site.labels.aboutAwardsTitle}</p>
 
             {/* 重點數據卡 */}
             {(site.about.highlight?.number || site.about.highlight?.title) && (
@@ -184,7 +184,7 @@ export default async function AboutPage() {
         {/* Skills */}
         <Reveal>
           <div className="mt-12">
-            <p className="label mb-4">Skills</p>
+            <p className="label mb-4">{site.labels.aboutSkillsTitle}</p>
             <div className="flex flex-wrap gap-2">
               {site.about.skills.map((skill) => (
                 <Chip key={skill}>{skill}</Chip>
@@ -197,13 +197,13 @@ export default async function AboutPage() {
         <Reveal>
           <div className="mt-12 flex flex-col items-start justify-between gap-4 rounded-lg border-[0.5px] border-warm-border bg-warm-surface px-6 py-5 sm:flex-row sm:items-center">
             <div>
-              <p className="text-[14px] text-text-primary">履歷 / Résumé</p>
+              <p className="text-[14px] text-text-primary">{site.about.resume.title}</p>
               <p className="mt-0.5 text-[12px] text-text-secondary">
-                下載完整經歷與作品列表（PDF）
+                {site.about.resume.subtitle}
               </p>
             </div>
             <Button href={site.resumeUrl} variant="primary" size="sm">
-              Download PDF ↓
+              {site.about.resume.buttonLabel}
             </Button>
           </div>
         </Reveal>
@@ -211,9 +211,9 @@ export default async function AboutPage() {
         {/* Contact CTA */}
         <Reveal>
           <div className="mt-16 border-t-[0.5px] border-warm-border pt-14 text-center">
-            <p className="label mb-3">Get in touch</p>
+            <p className="label mb-3">{site.about.cta.kicker}</p>
             <h2 className="display text-[32px] leading-tight text-text-primary md:text-[40px]">
-              想合作？歡迎聯絡。
+              {site.about.cta.heading}
             </h2>
             <p className="mx-auto mt-3 max-w-sm text-[13px] leading-[1.8] text-text-secondary">
               {site.contact.subtitleZh}
@@ -223,7 +223,7 @@ export default async function AboutPage() {
                 href="/contact"
                 className="inline-block rounded-full bg-text-primary px-8 py-3 text-[12px] uppercase tracking-[0.14em] text-on-dark transition-opacity hover:opacity-80"
               >
-                Contact me →
+                {site.about.cta.buttonLabel}
               </Link>
             </div>
           </div>

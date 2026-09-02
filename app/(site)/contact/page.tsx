@@ -25,7 +25,7 @@ export default async function ContactPage() {
         {/* 左：標題 + 社群 */}
         <Reveal>
           <div>
-            <p className="label mb-3">Contact</p>
+            <p className="label mb-3">{site.labels.contactKicker}</p>
             <h1 className="display text-[40px] leading-[1.1] text-text-primary md:text-[52px]">
               {site.contact.headline}
             </h1>
@@ -52,7 +52,7 @@ export default async function ContactPage() {
 
             {socials.length > 0 && (
               <div className="mt-8">
-                <p className="label mb-3">Elsewhere</p>
+                <p className="label mb-3">{site.labels.contactElsewhereTitle}</p>
                 <div className="flex flex-col gap-1.5">
                   {socials.map((s) => (
                     <a

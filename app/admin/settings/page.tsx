@@ -231,7 +231,20 @@ export default async function SettingsPage({
           />
         </Section>
 
-        <Section title="聯絡頁 / 履歷">
+        <Section title="About 頁 — 履歷區 + 聯絡呼籲">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <Field label="履歷區標題" name="about.resume.title" defaultValue={s.about.resume.title} placeholder="履歷 / Résumé" />
+            <Field label="履歷區說明" name="about.resume.subtitle" defaultValue={s.about.resume.subtitle} placeholder="下載完整經歷與作品列表（PDF）" />
+            <Field label="下載按鈕文字" name="about.resume.buttonLabel" defaultValue={s.about.resume.buttonLabel} placeholder="Download PDF ↓" />
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <Field label="CTA 小標" name="about.cta.kicker" defaultValue={s.about.cta.kicker} placeholder="Get in touch" />
+            <Field label="CTA 大標" name="about.cta.heading" defaultValue={s.about.cta.heading} placeholder="想合作？歡迎聯絡。" />
+            <Field label="CTA 按鈕文字" name="about.cta.buttonLabel" defaultValue={s.about.cta.buttonLabel} placeholder="Contact me →" />
+          </div>
+        </Section>
+
+        <Section title="聯絡頁 / 履歷檔案">
           <Field
             label="聯絡頁標題"
             name="contact.headline"
@@ -252,6 +265,45 @@ export default async function SettingsPage({
             defaultValue={s.resumeUrl}
             hint="放檔案到 public/resume.pdf 後填 /resume.pdf"
           />
+        </Section>
+
+        <Section title="文字標籤 / 用詞">
+          <p className="text-[11px] text-text-muted">
+            各頁面的區塊小標、連結文字。想換成中文、換個說法都可以，留空會用預設值。
+          </p>
+
+          <p className="mt-1 text-[11px] font-medium text-text-secondary">導覽列</p>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <Field label="首頁" name="labels.navHome" defaultValue={s.labels.navHome} />
+            <Field label="關於" name="labels.navAbout" defaultValue={s.labels.navAbout} />
+            <Field label="作品" name="labels.navWork" defaultValue={s.labels.navWork} />
+            <Field label="聯絡" name="labels.navContact" defaultValue={s.labels.navContact} />
+          </div>
+
+          <p className="mt-2 text-[11px] font-medium text-text-secondary">首頁</p>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <Field label="自我介紹小標" name="labels.homeAboutKicker" defaultValue={s.labels.homeAboutKicker} />
+            <Field label="「了解更多」連結" name="labels.homeMoreLink" defaultValue={s.labels.homeMoreLink} />
+            <Field label="精選作品小標" name="labels.homeWorksKicker" defaultValue={s.labels.homeWorksKicker} />
+            <Field label="精選作品大標" name="labels.homeWorksTitle" defaultValue={s.labels.homeWorksTitle} />
+            <Field label="「查看全部」連結" name="labels.homeWorksViewAll" defaultValue={s.labels.homeWorksViewAll} />
+            <Field label="沒有精選時的文字" name="labels.homeWorksEmpty" defaultValue={s.labels.homeWorksEmpty} />
+          </div>
+
+          <p className="mt-2 text-[11px] font-medium text-text-secondary">About 頁區塊標題</p>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <Field label="經歷" name="labels.aboutExperienceTitle" defaultValue={s.labels.aboutExperienceTitle} />
+            <Field label="獎項" name="labels.aboutAwardsTitle" defaultValue={s.labels.aboutAwardsTitle} />
+            <Field label="技能" name="labels.aboutSkillsTitle" defaultValue={s.labels.aboutSkillsTitle} />
+          </div>
+
+          <p className="mt-2 text-[11px] font-medium text-text-secondary">作品頁 / 聯絡頁</p>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <Field label="作品頁小標" name="labels.workKicker" defaultValue={s.labels.workKicker} />
+            <Field label="作品頁大標" name="labels.workTitle" defaultValue={s.labels.workTitle} />
+            <Field label="聯絡頁小標" name="labels.contactKicker" defaultValue={s.labels.contactKicker} />
+            <Field label="聯絡頁「其他連結」" name="labels.contactElsewhereTitle" defaultValue={s.labels.contactElsewhereTitle} />
+          </div>
         </Section>
 
         <div className="sticky bottom-4 flex justify-end">

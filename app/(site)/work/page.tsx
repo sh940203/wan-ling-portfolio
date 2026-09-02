@@ -18,9 +18,9 @@ export default async function WorkPage() {
     <main className="mx-auto max-w-6xl px-5 pb-2xl pt-12 md:px-10 md:pt-16">
       <Reveal>
         <header className="mb-10">
-          <p className="label mb-3">Portfolio</p>
+          <p className="label mb-3">{site.labels.workKicker}</p>
           <h1 className="display text-[40px] leading-tight text-text-primary md:text-[52px]">
-            Work
+            {site.labels.workTitle}
           </h1>
           <p className="mt-3 max-w-md text-[14px] leading-relaxed text-text-body">
             {site.workIntro}
