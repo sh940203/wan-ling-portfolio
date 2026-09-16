@@ -43,8 +43,21 @@ export default async function Footer() {
       </div>
       <div className="border-t-[0.5px] border-warm-border">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 md:px-10">
-          <span className="text-[10px] tracking-[0.06em] text-text-muted">
-            © {year} {site.name.en}
+          <span className="flex flex-wrap items-center gap-x-2 text-[10px] tracking-[0.06em] text-text-muted">
+            <span>
+              © {year} {site.name.en}
+            </span>
+            <span aria-hidden className="opacity-50">
+              ·
+            </span>
+            <a
+              href="https://sh-studio.huhu940203.workers.dev/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="transition-colors hover:text-text-primary"
+            >
+              Produced by @SH Studio
+            </a>
           </span>
           <Link
             href="/contact"
