@@ -25,12 +25,17 @@ const VIDEO_TYPES: Record<string, string> = {
 const IMAGE_MAX = 12 * 1024 * 1024; //   12MB
 const VIDEO_MAX = 5 * 1024 * 1024 * 1024; // 5GB（單次 PUT 上限）
 
+// 環境變數從 Cloudflare 複製貼上常會夾帶看不見的字元（空白、U+2028 換行分隔符等），
+// 這些值本來就不含空白，所以一律清掉。
+const clean = (v: string | undefined) =>
+  (v ?? "").replace(/[\s\u200B-\u200D\u2028\u2029\uFEFF]+/g, "");
+
 function r2Config() {
-  const accountId = process.env.R2_ACCOUNT_ID;
-  const accessKeyId = process.env.R2_ACCESS_KEY_ID;
-  const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
-  const bucket = process.env.R2_BUCKET;
-  const publicUrl = process.env.R2_PUBLIC_URL?.replace(/\/+$/, "");
+  const accountId = clean(process.env.R2_ACCOUNT_ID);
+  const accessKeyId = clean(process.env.R2_ACCESS_KEY_ID);
+  const secretAccessKey = clean(process.env.R2_SECRET_ACCESS_KEY);
+  const bucket = clean(process.env.R2_BUCKET);
+  const publicUrl = clean(process.env.R2_PUBLIC_URL).replace(/\/+$/, "");
   if (!accountId || !accessKeyId || !secretAccessKey || !bucket || !publicUrl) {
     return null;
   }
