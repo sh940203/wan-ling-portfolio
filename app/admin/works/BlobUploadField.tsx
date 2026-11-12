@@ -1,9 +1,8 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { upload } from "@vercel/blob/client";
 import { captureVideoPoster } from "@/lib/video-poster";
-import { uploadCoverBlob } from "@/lib/blob-upload";
+import { uploadToR2, uploadCoverBlob } from "@/lib/r2-upload";
 import FramePickerModal from "./FramePickerModal";
 
 const inputCls =
@@ -13,13 +12,10 @@ const labelCls =
 
 type Kind = "image" | "video";
 
-const CONF: Record<
-  Kind,
-  { accept: string; maxMB: number; clientPayload: string; folder: string }
-> = {
-  image: { accept: "image/*", maxMB: 12, clientPayload: "image", folder: "covers" },
-  // 影片實務上不設限，只擋明顯異常的超大檔；multipart 會分塊處理
-  video: { accept: "video/*", maxMB: 5120, clientPayload: "video", folder: "works" },
+const CONF: Record<Kind, { accept: string; maxMB: number }> = {
+  image: { accept: "image/*", maxMB: 12 },
+  // 影片實務上不設限（R2 單次 PUT 上限 5GB），只擋明顯異常的超大檔
+  video: { accept: "video/*", maxMB: 5120 },
 };
 
 const UPLOAD_URL = "/api/admin/upload";
@@ -122,16 +118,11 @@ export default function BlobUploadField({
     setError(null);
 
     try {
-      const ext = file.name.split(".").pop()?.toLowerCase() || "bin";
-      const result = await upload(`${conf.folder}/${Date.now()}.${ext}`, file, {
-        access: "public",
-        handleUploadUrl: UPLOAD_URL,
-        clientPayload: conf.clientPayload,
+      const publicUrl = await uploadToR2(file, {
+        kind,
         contentType: file.type,
-        // 大檔用 multipart：分塊並行上傳，也能中途重試
-        multipart: file.size > 15 * MB,
-        abortSignal: ctrl.signal,
-        onUploadProgress: (p) => {
+        signal: ctrl.signal,
+        onProgress: (p) => {
           const now = Date.now();
           // 節流：最多每 250ms 更新一次畫面
           if (now - tick.current.lastAt < 250 && p.loaded < p.total) return;
@@ -143,7 +134,7 @@ export default function BlobUploadField({
           setProg({ loaded: p.loaded, total: p.total, mbps, eta });
         },
       });
-      setUrl(result.url);
+      setUrl(publicUrl);
       setStatus("idle");
     } catch (err) {
       if (ctrl.signal.aborted) {

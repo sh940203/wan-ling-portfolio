@@ -5,7 +5,7 @@ import Link from "next/link";
 import { saveWorkAction } from "../actions";
 import BlobUploadField from "./BlobUploadField";
 import FramePickerModal from "./FramePickerModal";
-import { uploadCoverBlob } from "@/lib/blob-upload";
+import { uploadCoverBlob } from "@/lib/r2-upload";
 import type { Work } from "@/lib/types";
 
 const inputCls =
