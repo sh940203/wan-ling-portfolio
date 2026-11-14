@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { captureVideoPoster } from "@/lib/video-poster";
 import { uploadToR2, uploadCoverBlob } from "@/lib/r2-upload";
+import { compressVideo } from "@/lib/video-compress";
 import FramePickerModal from "./FramePickerModal";
 
 const inputCls =
@@ -20,6 +21,8 @@ const CONF: Record<Kind, { accept: string; maxMB: number }> = {
 
 const UPLOAD_URL = "/api/admin/upload";
 const MB = 1024 * 1024;
+// 影片超過這個大小就先跳提醒，讓使用者選擇要不要壓縮
+const BIG_VIDEO_MB = 100;
 const fmtMB = (b: number) => (b / MB).toFixed(b < 10 * MB ? 1 : 0);
 
 export default function BlobUploadField({
@@ -64,6 +67,12 @@ export default function BlobUploadField({
   >("idle");
   // 選好的影片先停在這裡等使用者在畫格選取器裡挑封面，確認後才真正開始上傳
   const [pendingFile, setPendingFile] = useState<File | null>(null);
+  // 影片太大時，先停在這裡讓使用者選「壓縮後上傳 / 原檔上傳 / 取消」
+  const [bigFile, setBigFile] = useState<File | null>(null);
+  const [compress, setCompress] = useState<
+    { state: "idle" } | { state: "running"; pct: number } | { state: "failed"; msg: string }
+  >({ state: "idle" });
+  const compressAbort = useRef<AbortController | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const tick = useRef({ t0: 0, lastAt: 0 });
@@ -168,12 +177,62 @@ export default function BlobUploadField({
     setError(null);
     setPosterState("idle");
 
-    // 影片：先讓使用者像 IG Reels 編輯器一樣挑封面畫格，挑好才真正開始上傳
+    // 影片太大：先問要不要壓縮
+    if (kind === "video" && file.size > BIG_VIDEO_MB * MB) {
+      setCompress({ state: "idle" });
+      setBigFile(file);
+      return;
+    }
+    proceedWith(file);
+  }
+
+  // 影片：先讓使用者像 IG Reels 編輯器一樣挑封面畫格，挑好才真正開始上傳
+  function proceedWith(file: File) {
     if (kind === "video" && onPosterReady) {
       setPendingFile(file);
       return;
     }
     startUpload(file);
+  }
+
+  function chooseOriginal() {
+    const f = bigFile;
+    setBigFile(null);
+    if (f) proceedWith(f);
+  }
+
+  function cancelBig() {
+    compressAbort.current?.abort();
+    setBigFile(null);
+    setCompress({ state: "idle" });
+  }
+
+  async function chooseCompress() {
+    const f = bigFile;
+    if (!f) return;
+    const ctrl = new AbortController();
+    compressAbort.current = ctrl;
+    setCompress({ state: "running", pct: 0 });
+    try {
+      const out = await compressVideo(f, {
+        signal: ctrl.signal,
+        onProgress: (p) =>
+          setCompress({ state: "running", pct: Math.min(99, Math.round(p.ratio * 100)) }),
+      });
+      // 壓完反而更大（本來就壓得很緊的影片）就用原檔
+      const useFile = out.size < f.size ? out : f;
+      setBigFile(null);
+      setCompress({ state: "idle" });
+      proceedWith(useFile);
+    } catch (err) {
+      if (ctrl.signal.aborted) return;
+      setCompress({
+        state: "failed",
+        msg: err instanceof Error ? err.message : "壓縮失敗",
+      });
+    } finally {
+      compressAbort.current = null;
+    }
   }
 
   const busy = status === "preparing" || status === "uploading";
@@ -307,6 +366,82 @@ export default function BlobUploadField({
         onChange={onPick}
         className="hidden"
       />
+
+      {bigFile && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+        >
+          <div className="w-full max-w-[420px] rounded-xl bg-warm-surface p-5 shadow-xl">
+            <h3 className="text-[15px] font-medium text-text-primary">
+              這支影片有 {fmtMB(bigFile.size)} MB，檔案很大
+            </h3>
+            <p className="mt-2 text-[13px] leading-relaxed text-text-body">
+              原檔上傳會比較久、也比較耗行動網路流量，訪客開啟網站時影片載入也會較慢。要先幫你壓縮嗎？
+            </p>
+            <ul className="mt-2 space-y-1 text-[12px] leading-relaxed text-text-muted">
+              <li>・壓縮在你的手機／電腦上進行，不會傳到別處，原檔不會被動到</li>
+              <li>・轉成 1080p 的 MP4，網頁上看畫質差異很小，通常能縮小到原本的 1/3～1/10</li>
+              <li>・壓縮約需數十秒到幾分鐘，期間請保持畫面開著、不要切到別的 App</li>
+            </ul>
+
+            {compress.state === "running" && (
+              <div className="mt-4 space-y-1">
+                <div className="h-1 w-full overflow-hidden rounded-full bg-warm-mid">
+                  <div
+                    className="h-full rounded-full bg-text-primary transition-[width] duration-200"
+                    style={{ width: `${Math.max(3, compress.pct)}%` }}
+                  />
+                </div>
+                <p className="text-[11px] text-text-muted">壓縮中 {compress.pct}%…</p>
+              </div>
+            )}
+
+            {compress.state === "failed" && (
+              <p className="mt-3 text-[12px] text-red-600">{compress.msg}</p>
+            )}
+
+            <div className="mt-5 flex flex-wrap items-center justify-end gap-2">
+              {compress.state === "running" ? (
+                <button
+                  type="button"
+                  onClick={cancelBig}
+                  className="h-9 rounded-full px-4 text-[12px] text-text-muted hover:text-text-primary"
+                >
+                  取消壓縮
+                </button>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={cancelBig}
+                    className="h-9 px-3 text-[12px] text-text-muted hover:text-text-primary"
+                  >
+                    取消
+                  </button>
+                  <button
+                    type="button"
+                    onClick={chooseOriginal}
+                    className="h-9 rounded-full border-[0.5px] border-warm-border px-4 text-[12px] text-text-body hover:border-text-muted"
+                  >
+                    原檔上傳
+                  </button>
+                  {compress.state !== "failed" && (
+                    <button
+                      type="button"
+                      onClick={chooseCompress}
+                      className="h-9 rounded-full bg-text-primary px-4 text-[12px] text-warm-surface"
+                    >
+                      壓縮後上傳（建議）
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {pendingFile && (
         <FramePickerModal
